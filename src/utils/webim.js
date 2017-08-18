@@ -1,0 +1,309 @@
+/**
+ * @Date: 2017/8/15  11:41
+ * @Author: leo
+ * http://xuebin.me/
+ * Created with JetBrains WebStorm.
+ */
+import Vue from 'vue'
+import WebIM from 'WebIM'
+
+export let _vm = new Vue({
+    data: {
+        user: {
+            id: '',
+            name: '',
+            pwd: '',
+            photo: ''
+        },
+        friends: []
+    }
+})
+window._vm = _vm;
+
+//建立连接
+_vm.IM = new WebIM.connection({
+    https: WebIM.config.https,
+    url: WebIM.config.xmppURL,
+    isAutoLogin: WebIM.config.isAutoLogin,
+    isMultiLoginSessions: WebIM.config.isMultiLoginSessions
+})
+
+//回调监听
+_vm.IM.listen({
+    /**
+     * 连接成功回调
+     * 如果isAutoLogin设置为false，那么必须手动设置上线，否则无法收消息
+     * 手动上线指的是调用conn.setPresence(); 如果conn初始化时已将isAutoLogin设置为true
+     * 则无需调用conn.setPresence();
+     * @param message
+     */
+    onOpened: function (message) {
+        console.log('[onOpened]连接成功 =>', message)
+        handleOpened(message)
+    },
+    /**
+     * 连接关闭回调
+     * @param message
+     */
+    onClosed: function (message) {
+        console.log('[onClosed]连接关闭 =>', message)
+    },
+    /**
+     * 收到文本消息
+     * @param message
+     */
+    onTextMessage: function (message) {
+        console.log('[onTextMessage]收到文本消息 =>', message)
+        _vm.$emit('receiveMsg', {msg: message, type: 'txt'})
+    },
+    /**
+     * 收到表情消息
+     * @param message
+     */
+    onEmojiMessage: function (message) {
+        console.log('[onEmojiMessage]收到表情消息 =>', message)
+        _vm.$emit('receiveMsg', {msg: message, type: 'emoji'})
+    },
+    /**
+     * 收到图片消息
+     * @param message
+     */
+    onPictureMessage: function (message) {
+        console.log('[onPictureMessage]收到图片消息 =>', message)
+        _vm.$emit('receiveMsg', {msg: message, type: 'img'})
+    },
+    /**
+     * 收到命令消息
+     * @param message
+     */
+    onCmdMessage: function (message) {
+        console.log('[onCmdMessage]收到命令消息 =>', message)
+    },
+    /**
+     * 收到音频消息
+     * @param message
+     */
+    onAudioMessage: function (message) {
+        console.log('[onAudioMessage]收到音频消息 =>', message)
+        _vm.$emit('receiveMsg', {msg: message, type: 'audio'})
+    },
+    /**
+     * 收到位置消息
+     * @param message
+     */
+    onLocationMessage: function (message) {
+        console.log('[onLocationMessage]收到位置消息 =>', message)
+        _vm.$emit('receiveMsg', {msg: message, type: 'img'})
+    },
+    /**
+     * 收到文件消息
+     * @param message
+     */
+    onFileMessage: function (message) {
+        console.log('[onFileMessage]收到文件消息 =>', message)
+    },
+    /**
+     * 收到视频消息
+     * @param message
+     */
+    onVideoMessage: function (message) {
+        console.log('[onVideoMessage]收到视频消息 =>', message)
+        var node = document.getElementById('privateVideo');
+        var option = {
+            url: message.url,
+            headers: {
+                'Accept': 'audio/mp4'
+            },
+            onFileDownloadComplete: function (response) {
+                var objectURL = WebIM.utils.parseDownloadResponse.call(IM, response);
+                node.src = objectURL;
+            },
+            onFileDownloadError: function () {
+                console.log('File down load error.')
+            }
+        };
+        WebIM.utils.download.call(IM, option);
+    },
+    /**
+     * 处理“广播”或“发布-订阅”消息，如联系人订阅请求、处理群组、聊天室被踢解散等消息
+     * @param message
+     */
+    onPresence: function (message) {
+        console.log('[onPresence]“广播”或“发布-订阅”消息 =>', message)
+        handlePresence(message);
+    },
+    /**
+     * 处理好友申请
+     * @param message
+     */
+    onRoster: function (message) {
+        console.log('[onRoster]好友申请 =>', message)
+    },
+    /**
+     * 处理群组邀请
+     * @param message
+     */
+    onInviteMessage: function (message) {
+        console.log('[onInviteMessage]群组邀请 =>', message)
+    },
+    /**
+     * 本机网络连接成功
+     */
+    onOnline: function () {
+        console.log('[onOnline] => 本机网络连接成功')
+    },
+    /**
+     * 本机网络掉线
+     */
+    onOffline: function () {
+        console.log('[onOffline] => 本机网络掉线')
+    },
+    /**
+     * 失败回调
+     * @param message
+     */
+    onError: function (message) {
+        console.log(`[onError]回调失败 => ${message.data.data && JSON.parse(message.data.data)['error_description']}`, message)
+        handleError(message)
+    },
+    /**
+     * 黑名单变动
+     * 查询黑名单，将好友拉黑，将好友从黑名单移除都会回调这个函数，list则是黑名单现有的所有好友信息
+     * @param list
+     */
+    onBlacklistUpdate: function (list) {
+        console.log('[onBlacklistUpdate]黑名单变动 =>', list);
+    },
+    /**
+     * 收到消息送达客户端回执
+     * @param message
+     */
+    onReceivedMessage: function (message) {
+        console.log('[onReceivedMessage]收到消息送达客户端回执 =>', message)
+    },
+    /**
+     * 收到消息送达服务器回执
+     * @param message
+     */
+    onDeliveredMessage: function (message) {
+        console.log('[onDeliveredMessage]收到消息送达服务器回执 =>', message)
+    },
+    /**
+     * 收到消息已读回执
+     * @param message
+     */
+    onReadMessage: function (message) {
+        console.log('[onReadMessage]收到消息已读回执 =>', message)
+    },
+    /**
+     * 创建群组成功回执（需调用createGroupNew）
+     * @param message
+     */
+    onCreateGroup: function (message) {
+        console.log('[onCreateGroup]创建群组成功回执 =>', message)
+    },
+    /**
+     * 如果用户在A群组被禁言，在A群发消息会走这个回调并且消息不会传递给群其它成员
+     * @param message
+     */
+    onMutedMessage: function (message) {
+        console.log('[onMutedMessage]禁言 =>', message)
+    }
+})
+
+/**
+ * 回调失败
+ * @param message
+ */
+function handleError(message) {
+    if (message.data.data && JSON.parse(message.data.data)['error_description'] === 'user not found') {
+        _vm.IM.registerUser({
+            username: _vm.user.name,
+            password: _vm.user.pwd,
+            nickname: _vm.user.name,
+            appKey: WebIM.config.appkey,
+            success: function () {
+                console.log(`[Leo] => 注册成功，自动登录`)
+                _vm.IM.open({
+                    apiUrl: WebIM.config.apiURL,
+                    user: _vm.user.name,
+                    pwd: _vm.user.pwd,
+                    appKey: WebIM.config.appkey,
+                    success: function (data) {
+                        console.log(`[Leo]登录成功 => `, data)
+                        let token = data.access_token;
+                        WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
+                        $vm.$router.push({path: '/'})
+                    },
+                })
+            },
+            error: function () {
+                console.log(`[Leo] => 注册失败`)
+            },
+            apiUrl: WebIM.config.apiURL
+        })
+    }
+}
+
+/**
+ * 连接成功
+ * @param message
+ */
+function handleOpened(message) {
+    _vm.IM.getRoster({
+        success: function (roster) {
+            console.log('获取好友信息', roster)
+            //获取好友列表，并进行好友列表渲染，roster格式为：
+            // [
+            //     {
+            //         jid:'asemoemo#chatdemoui_test1@easemob.com',
+            //         name:'test1',
+            //         subscription: 'both'
+            //     }
+            // ]
+            for (var i = 0, l = roster.length; i < l; i++) {
+                var ros = roster[i];
+                //ros.subscription值为both/to为要显示的联系人，此处与APP需保持一致，才能保证两个客户端登录后的好友列表一致
+                if (ros.subscription === 'both' || ros.subscription === 'to') {
+                    console.log('ros.subscription => ', ros.subscription)
+                    _vm.friends.push(ros)
+                }
+            }
+        },
+    })
+}
+
+/**
+ * 收到联系人订阅请求的处理方法，具体的type值所对应的值请参考xmpp协议规范
+ * @param message
+ */
+function handlePresence(e) {
+    //（发送者希望订阅接收者的出席信息），即别人申请加你为好友
+    if (e.type === 'subscribe') {
+        //若e.status中含有[resp:true],则表示为对方同意好友后反向添加自己为好友的消息，demo中发现此类消息，默认同意操作，完成双方互为好友；如果不含有[resp:true]，则表示为正常的对方请求添加自己为好友的申请消息。
+        /*同意添加好友操作的实现方法*/
+        _vm.IM.subscribed({
+            to: _vm.user.name,
+            message: '[resp:true]'
+        });
+        _vm.IM.subscribe({//需要反向添加对方好友
+            to: e.from,
+            message: '[resp:true]'
+        });
+    }
+
+    //(发送者允许接收者接收他们的出席信息)，即别人同意你加他为好友
+    if (e.type === 'subscribed') {
+
+    }
+
+    //（发送者取消订阅另一个实体的出席信息）,即删除现有好友
+    if (e.type === 'unsubscribe') {
+
+    }
+
+    //（订阅者的请求被拒绝或以前的订阅被取消），即对方单向的删除了好友
+    if (e.type === 'unsubscribed') {
+
+    }
+}

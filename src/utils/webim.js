@@ -6,19 +6,27 @@
  */
 import Vue from 'vue'
 import WebIM from 'WebIM'
+import code from './status'
+import language from './language'
 
 export let _vm = new Vue({
     data: {
+        lan: {},
         user: {
             id: '',
             name: '',
             pwd: '',
             photo: ''
         },
-        friends: []
+        friends: [],
+        chatMsg: {},
+        errorType: -1,
     }
 })
 window._vm = _vm;
+
+WebIM.statusCode = code
+_vm.lan = language['Chinese']
 
 //建立连接
 _vm.IM = new WebIM.connection({
@@ -40,6 +48,7 @@ _vm.IM.listen({
     onOpened: function (message) {
         console.log('[onOpened]连接成功 =>', message)
         handleOpened(message)
+        _vm.$emit('onOpened', message)
     },
     /**
      * 连接关闭回调
@@ -101,6 +110,7 @@ _vm.IM.listen({
      */
     onFileMessage: function (message) {
         console.log('[onFileMessage]收到文件消息 =>', message)
+        // _vm.$emit('receiveMsg', {msg: message, type: 'img'})
     },
     /**
      * 收到视频消息
@@ -151,19 +161,20 @@ _vm.IM.listen({
      */
     onOnline: function () {
         console.log('[onOnline] => 本机网络连接成功')
+        _vm.$emit('onOnline')
     },
     /**
      * 本机网络掉线
      */
     onOffline: function () {
         console.log('[onOffline] => 本机网络掉线')
+        _vm.$emit('onOffline')
     },
     /**
      * 失败回调
      * @param message
      */
     onError: function (message) {
-        console.log(`[onError]回调失败 => ${message.data.data && JSON.parse(message.data.data)['error_description']}`, message)
         handleError(message)
     },
     /**
@@ -216,32 +227,73 @@ _vm.IM.listen({
  * @param message
  */
 function handleError(message) {
-    if (message.data.data && JSON.parse(message.data.data)['error_description'] === 'user not found') {
-        _vm.IM.registerUser({
-            username: _vm.user.name,
-            password: _vm.user.pwd,
-            nickname: _vm.user.name,
-            appKey: WebIM.config.appkey,
-            success: function () {
-                console.log(`[Leo] => 注册成功，自动登录`)
-                _vm.IM.open({
-                    apiUrl: WebIM.config.apiURL,
-                    user: _vm.user.name,
-                    pwd: _vm.user.pwd,
-                    appKey: WebIM.config.appkey,
-                    success: function (data) {
-                        console.log(`[Leo]登录成功 => `, data)
-                        let token = data.access_token;
-                        WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
-                        $vm.$router.push({path: '/'})
-                    },
-                })
-            },
-            error: function () {
-                console.log(`[Leo] => 注册失败`)
-            },
-            apiUrl: WebIM.config.apiURL
-        })
+    console.error('回调失败 => ', message)
+    let text = '';
+
+    switch (message.type) {
+        case WebIM.statusCode.WEBIM_CONNCTION_USER_NOT_ASSIGN_ERROR:
+            console.error(`[onError]=>${_vm.lan.refuse}`)
+            return
+        case WebIM.statusCode.WEBIM_CONNCTION_DISCONNECTED:
+            if (_vm.IM.autoReconnectNumTotal < _vm.IM.autoReconnectNumMax) {
+                _vm.IM.errorType = message.type;
+                return;
+            }
+            _vm.IM.reconnect()
+            $vm.$router.push({path: '/login'})
+    }
+
+    if (message.data && message.data.data) {
+        text = message.data.data;
+        if (JSON.parse(message.data.data)['error_description'] === 'user not found') {
+            text = _vm.lan.userDoesNotExist
+            // _vm.IM.registerUser({
+            //     username: _vm.user.name,
+            //     password: _vm.user.pwd,
+            //     nickname: _vm.user.name,
+            //     appKey: WebIM.config.appkey,
+            //     success: function () {
+            //         console.log(`[Leo] => 自动注册成功`)
+            //         _vm.IM.open({
+            //             apiUrl: WebIM.config.apiURL,
+            //             user: _vm.user.name,
+            //             pwd: _vm.user.pwd,
+            //             appKey: WebIM.config.appkey,
+            //             success: function (data) {
+            //                 console.log(`[Leo] => 自动登录成功`)
+            //                 let token = data.access_token;
+            //                 WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
+            //                 $vm.$router.push({path: '/'})
+            //             },
+            //         })
+            //     },
+            //     error: function () {
+            //         console.error(`[Leo] => 自动注册失败`)
+            //     },
+            //     apiUrl: WebIM.config.apiURL
+            // })
+        }
+    } else {
+        text = WebIM.utils.getObjectKey(WebIM.statusCode, message.type) + ' ' + ' type=' + message.type;
+    }
+
+    if (_vm.IM.errorType != WebIM.statusCode.WEBIM_CONNCTION_CLIENT_LOGOUT) {
+        if (message.type === WebIM.statusCode.WEBIM_CONNECTION_ACCEPT_INVITATION_FROM_GROUP
+            || message.type === WebIM.statusCode.WEBIM_CONNECTION_DECLINE_INVITATION_FROM_GROUP
+            || message.type === WebIM.statusCode.WEBIM_CONNECTION_ACCEPT_JOIN_GROUP
+            || message.type === WebIM.statusCode.WEBIM_CONNECTION_DECLINE_JOIN_GROUP
+            || message.type === WebIM.statusCode.WEBIM_CONNECTION_CLOSED) {
+            console.error(text)
+            return
+        } else {
+            if (text == 'logout' || text == 'WEBIM_CONNCTION_SERVER_ERROR  type=8') {
+                text = _vm.lan.logoutSuc;
+                console.log(`[Leo] => ${text}`)
+                $vm.$router.push({path: '/login'})
+            } else {
+                console.error(`[onError]=>${text}`)
+            }
+        }
     }
 }
 

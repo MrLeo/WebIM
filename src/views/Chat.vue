@@ -6,10 +6,11 @@
 -->
 <template lang="pug">
     .page.page-current
+        //-顶部导航
         mt-header(fixed,:title="title")
             router-link(to="/" slot="left")
                 mt-button(icon="back") 返回
-
+        //-消息列表
         main
             mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
                 .list
@@ -25,27 +26,21 @@
                                     component(:is="'v-'+item.msg.type", :data="item.msg.data || item.msg.url")
                                 template(v-if="item.msg.type == 'txt' || item.msg.type == 'emoji'")
                                     component(v-for="(item,index) in item.msg.data",:key="index",:is="'v-'+item.type", :data="item.data")
-
+        //-底部按钮
         .room_bar
-            //-文本框
-            .form
+            .form(title="文本框")
                 input.f.news(v-if="true",v-model="inputMessage",@click="focus",@focus="focus")
                 button.f.btn-recording(v-else,@mousedown="handleRecording",@mouseup="handleRecordingCancel") 按住 说话
                 button.send_btn(@click="sendMessage") 发送
             //-按钮区
             .other_func
-                .open_emoji(@click="openEmoji")
+                .open_emoji(@click="openEmoji",title="发送表情")
                     img(src="../assets/images/Emoji.png")
-                //.send_image(@click="sendImage")
-                .send_image
+                .send_image(title="发送图片")
                     img(src="../assets/images/iconImage@2x.png", style="height: 18px;")
                     input.uploader(type="file",@change="sendImage",ref="uploader")
-                .v-record(@click="toggleRecordModal")
-                    img.icon-record(:src="recordStatus != RecordStatus.HIDE ? require('../assets/images/iconAudioActive@2x.png') : require('../assets/images/iconAudio@2x.png')")
-            //-表情包
-            .emoji_item(:class="show")
+            .emoji_item(:class="show",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
-
         //-语音消息：录音弹窗
         .modal.modal-record(v-if="recordStatus != RecordStatus.HIDE",@click="toggleRecordModal")
             .modal-body
@@ -55,8 +50,6 @@
 </template>
 
 <script>
-    import {mapState, mapGetters, mapMutations, mapActions} from 'vuex'
-    import * as types from '../store/mutation-types'
     import {Header, Loadmore, Button} from 'mint-ui'
     import WebIM from 'WebIM'
     import {_vm} from "../utils/webim";
@@ -78,8 +71,8 @@
             title: '',
             username: '',
             allLoaded: false,//底部数据全部获取完毕
-            chatMsg: [],
             Emoji: WebIM.Emoji,
+            chatMsg: [],
             show: 'emoji_list',
             RecordDesc: {
                 0: '长按开始录音',
@@ -101,19 +94,19 @@
         created() {
             this.title = this.$route.query.name || ''
             this.username = this.$route.query.name || ''
+            if (!_vm.chatMsg.hasOwnProperty(this.$route.query.name)) _vm.chatMsg[this.$route.query.name] = []
+            this.$set(this, 'chatMsg', _vm.chatMsg[this.$route.query.name])
         },
         mounted() {
             this.init()
         },
         watch: {},
-        computed: {
-            ...mapState({}),
-            ...mapGetters({}),
-        },
+        computed: {},
         methods: {
-            ...mapActions([]),
-            ...mapMutations({}),
             init() {
+                _vm.$watch('chatMsg', (val, oldVal) => {
+                    this.$set(this, 'chatMsg', val)
+                })
                 _vm.$on('receiveMsg', ({msg, type}) => {
                     console.log('receiveMsg => ', {msg, type})
                     this.receiveMessage(msg, type)
@@ -126,64 +119,6 @@
                         var value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
                     } else if (type == 'emoji') {
                         var value = msg.data
-                    } else if (type == 'audio') {
-                        // 如果是音频则请求服务器转码
-                        console.log('Audio Audio msg: ', msg);
-                        var token = msg.accessToken;
-                        console.log('get token: ', token)
-                        var options = {
-                            url: msg.url,
-                            header: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'audio/mp3',
-                                'Authorization': 'Bearer ' + token
-                            },
-                            success: function (res) {
-                                console.log('downloadFile success Play', res);
-                                // wx.playVoice({
-                                // filePath: res.tempFilePath
-                                // })
-                                msg.url = res.tempFilePath
-                                var msgData = {
-                                    info: {
-                                        from: msg.from,
-                                        to: msg.to
-                                    },
-                                    username: '',
-                                    yourname: msg.from,
-                                    msg: {
-                                        type: type,
-                                        data: value,
-                                        url: msg.url
-                                    },
-                                    style: '',
-                                    time: time,
-                                    mid: msg.type + msg.id
-                                }
-
-                                if (msg.from == that.username) {
-                                    msgData.style = ''
-                                    msgData.username = msg.from
-                                } else {
-                                    msgData.style = 'self'
-                                    msgData.username = msg.to
-                                }
-
-                                var msgArr = that.data.chatMsg;
-                                msgArr.pop();
-                                msgArr.push(msgData);
-
-                                that.setData({
-                                    chatMsg: that.data.chatMsg,
-                                })
-                                console.log("New audio");
-                            },
-                            fail: function (e) {
-                                console.log('downloadFile failed', e);
-                            }
-                        };
-                        console.log('Download');
-                        //wx.downloadFile(options);
                     } else {
                         var value = msg.data
                     }
@@ -211,7 +146,7 @@
                         msgData.style = 'self'
                         msgData.username = msg.to
                     }
-                    that.chatMsg.push(msgData)
+                    _vm.chatMsg[this.$route.query.name].push(msgData)
                 }
             },
             sendMessage() {
@@ -247,7 +182,7 @@
                         time: time,
                         mid: message.id
                     }
-                    that.chatMsg.push(msgData)
+                    _vm.chatMsg[this.$route.query.name].push(msgData)
 
                     that.userMessage = ''
                     that.inputMessage = ''
@@ -257,7 +192,6 @@
             focus() {
                 this.cancelEmoji()
             },
-
             //region Emoji
             openEmoji() {
                 this.show = 'showEmoji'
@@ -290,9 +224,9 @@
                 console.log(e)
                 var that = this
                 this.cancelEmoji()
-                let id = _vm.IM.getUniqueId()                     // 生成本地消息id
-                let msg = new WebIM.message('img', id)          // 创建图片消息
-                let file = WebIM.utils.getFileUrl(this.$refs.uploader)        // 将图片转化为二进制文件
+                let id = _vm.IM.getUniqueId()// 生成本地消息id
+                let msg = new WebIM.message('img', id)// 创建图片消息
+                let file = WebIM.utils.getFileUrl(this.$refs.uploader)// 将图片转化为二进制文件
 
                 if (!file.filename) {
                     this.$refs.uploader.value = null;
@@ -310,7 +244,7 @@
                     let option = {
                         apiUrl: WebIM.config.apiURL,
                         file: file,
-                        to: that.$route.query.name,           // 接收消息对象
+                        to: that.$route.query.name,// 接收消息对象
                         roomType: false,
                         chatType: 'singleChat',
                         onFileUploadError: function (error) {      // 消息上传失败
@@ -333,13 +267,13 @@
                                     type: 'img',
                                     data: url
                                 },
-                                style: '',
+                                style: 'self',
                                 time: time,
                                 mid: 'img' + id,
                             }
 //                            Demo.api.addToChatRecord(option, 'img');
 //                            Demo.api.appendMsg(option, 'img');
-                            that.chatMsg.push(msgData)
+                            _vm.chatMsg[this.$route.query.name].push(msgData)
                         },
                         success: function () {                // 消息发送成功
                             console.log('[Success]图片发送成功');
@@ -391,7 +325,6 @@
                 //wx.stopRecord()
             },
             //endregion
-
             //region 列表顶部的下拉刷新
             loadTop() {
                 //TODO:加载数据
@@ -651,6 +584,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
     }
 
     .v-record {
@@ -699,7 +633,7 @@
     }
 
     .modal-record .desc {
-        color: rgb(112, 126, 137);
+        color: #fff;
         font-size: 13px;
         margin-bottom: 20px;
     }

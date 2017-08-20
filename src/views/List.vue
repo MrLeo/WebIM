@@ -8,7 +8,7 @@
     .page-group
         .page
             mt-header(fixed,:title="title")
-                mt-button(icon="more", slot="right",@click="addFriend")
+                //-mt-button(icon="more", slot="right",@click="addFriend")
             main
                 mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
                     ul.list
@@ -23,8 +23,6 @@
 </template>
 
 <script>
-    import {mapState, mapGetters, mapMutations, mapActions} from 'vuex'
-    import * as types from '../store/mutation-types'
     import {Header, Button, Loadmore, CellSwipe, MessageBox, Popup} from 'mint-ui'
     import WebIM from 'WebIM'
     import {_vm} from "../utils/webim";
@@ -48,24 +46,14 @@
             friendName: '',
             friends: [],
         }),
-        created() {
+        mounted() {
             this.token = WebIM.utils.getCookie('webim_' + _vm.user.name)
             console.log('token=>', this.token)
-
             this.init()
         },
-        mounted() {
-        },
         watch: {},
-        computed: {
-            ...mapState({
-//                friends: state => state.friends
-            }),
-            ...mapGetters({}),
-        },
+        computed: {},
         methods: {
-            ...mapActions([]),
-            ...mapMutations({}),
             init() {
                 let _t = this
                 this.login()
@@ -102,24 +90,12 @@
                 this.popupVisible = true
             },
             doAddFriend() {
+                console.log(`[Leo] => 加个好友呗`)
 //                this.$store.state.IM.subscribe({
 //                    to: this.friendName,
 //                    message: '加个好友呗!'
 //                });
             },
-            //region 列表顶部的下拉刷新
-            loadTop() {
-                //TODO:加载数据
-                this.$refs.loadmore.onTopLoaded();
-            },
-            //endregion
-            //region 列表底部的上拉刷新
-            loadBottom() {
-                //TODO:加载更多数据
-                this.allLoaded = true;// 若数据已全部获取完毕
-                this.$refs.loadmore.onBottomLoaded();
-            },
-            //endregion
             //region 标记已读
             setReadStatus(item) {
                 console.log(`[Leo] => 已读`, item)
@@ -138,6 +114,19 @@
                 console.log('toNextPage')
                 this.$router.push({path: '/chat', query: {name: item.name}})
                 return false
+            },
+            //endregion
+            //region 列表顶部的下拉刷新
+            loadTop() {
+                //TODO:加载数据
+                this.$refs.loadmore.onTopLoaded();
+            },
+            //endregion
+            //region 列表底部的上拉刷新
+            loadBottom() {
+                //TODO:加载更多数据
+                this.allLoaded = true;// 若数据已全部获取完毕
+                this.$refs.loadmore.onBottomLoaded();
             },
             //endregion
         },

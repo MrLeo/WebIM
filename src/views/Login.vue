@@ -17,8 +17,6 @@
 </template>
 
 <script>
-    import {mapState, mapGetters, mapMutations, mapActions} from 'vuex'
-    import * as types from '../store/mutation-types'
     import WebIM from 'WebIM'
     import {_vm} from "../utils/webim";
 
@@ -35,13 +33,8 @@
         mounted() {
         },
         watch: {},
-        computed: {
-            ...mapState({}),
-            ...mapGetters({}),
-        },
+        computed: {},
         methods: {
-            ...mapActions([]),
-            ...mapMutations({}),
             login() {
                 let _this = this
 
@@ -62,7 +55,8 @@
                         _this.$router.push({path: '/'})
                     },
                     error: function (e) {
-                        console.log(`[Leo]登录失败`, e)
+                        console.log(`[Leo]登录失败`)
+                        _this.$router.push({path: '/login'})
                     }
                 })
                 //endregion

@@ -24,18 +24,17 @@ export default new Router({
     routes: [
         {
             path: '/login',
-            name: 'IM.List',
-            component: () => import('../views/Login'),
+            name: 'IM.Login',
+            component: resolve => require(['../views/Login'], resolve)
         },
         {
             path: '/',
             name: 'IM.List',
-            component: () => import('../views/List'),
-            // component: resolve => require(['../views/List'], resolve)
+            component: resolve => require(['../views/List'], resolve),
             children: [{
                 path: '/chat',
                 name: 'IM.List.Chat',
-                component: () => import('../views/chat')
+                component: resolve => require(['../views/chat'], resolve)
             }]
         }
     ]

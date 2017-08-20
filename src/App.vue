@@ -4,6 +4,9 @@
 </template>
 
 <script>
+    import {mapState, mapGetters, mapMutations, mapActions} from 'vuex'
+    import * as types from './store/mutation-types'
+    import {_vm} from "./utils/webim";
     export default {
         name: 'app',
         mounted() {

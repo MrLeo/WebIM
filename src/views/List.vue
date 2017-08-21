@@ -51,7 +51,7 @@
         methods: {
             init() {
                 let _t = this
-                _t.login()
+                if (!_vm.user.name) _t.login('112', '123456')
 
                 //好友信息改变
                 _vm.$watch('friends', function (val, oldVal) {
@@ -74,7 +74,7 @@
                     })
                 })
             },
-            login() {
+            login(username, password) {
                 ////token登录
                 //_vm.IM.open({
                 //    apiUrl: WebIM.config.apiURL,
@@ -86,16 +86,18 @@
                 //密码登录
                 _vm.IM.open({
                     apiUrl: WebIM.config.apiURL,
-                    user: '112',
-                    pwd: '123456',
+                    user: username,
+                    pwd: password,
                     appKey: WebIM.config.appkey,
                     success: function (data) {
                         console.log(`[Leo]登录成功 => `, data)
                         let token = data.access_token;
                         WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
+                        _vm.user.name = username
+                        _vm.user.pwd = password
                     }
                 })
-                this.title = '112'
+                this.title = username
             },
             receiveMessage(msg, type) {
                 let that = this

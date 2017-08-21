@@ -1,9 +1,3 @@
-<!--
-* @Date: 2017/8/14  15:30
-* @Author: leo
-* http://xuebin.me/
-* Created with JetBrains WebStorm.
--->
 <template lang="pug">
     .page.page-current
         //-顶部导航
@@ -105,49 +99,11 @@
         methods: {
             init() {
                 _vm.$watch('chatMsg', (val, oldVal) => {
+                    console.log('chatMsg change=>', val)
                     this.$set(this, 'chatMsg', val)
                 })
-                _vm.$on('receiveMsg', ({msg, type}) => {
-                    console.log('receiveMsg => ', {msg, type})
-                    this.receiveMessage(msg, type)
-                })
-            },
-            receiveMessage(msg, type) {
-                let that = this
-                if (msg.from == that.username || msg.to == that.username) {
-                    if (type == 'txt') {
-                        var value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
-                    } else if (type == 'emoji') {
-                        var value = msg.data
-                    } else {
-                        var value = msg.data
-                    }
-                    let time = WebIM.time()
-                    let msgData = {
-                        info: {
-                            from: msg.from,
-                            to: msg.to
-                        },
-                        username: '',
-                        yourname: msg.from,
-                        msg: {
-                            type: type,
-                            data: value,
-                            url: msg.url
-                        },
-                        style: '',
-                        time: time,
-                        mid: msg.type + msg.id
-                    }
-                    if (msg.from == that.username) {
-                        msgData.style = ''
-                        msgData.username = msg.from
-                    } else {
-                        msgData.style = 'self'
-                        msgData.username = msg.to
-                    }
-                    _vm.chatMsg[this.$route.query.name].push(msgData)
-                }
+
+                _vm.$emit('readed', this.$route.query.name)
             },
             sendMessage() {
                 if (!this.inputMessage.trim()) return;

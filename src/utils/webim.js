@@ -317,7 +317,7 @@ function handleOpened(message) {
                 var ros = roster[i];
                 //ros.subscription值为both/to为要显示的联系人，此处与APP需保持一致，才能保证两个客户端登录后的好友列表一致
                 if (ros.subscription === 'both' || ros.subscription === 'to') {
-                    console.log('ros.subscription => ', ros.subscription)
+                    ros.noread = 0
                     _vm.friends.push(ros)
                 }
             }

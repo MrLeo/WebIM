@@ -19,7 +19,7 @@ WebIM.config = {
     /*
      * Application AppKey
      */
-    appkey: '360unicom#360unicom',
+    appkey: 'hbrt#doctor',
 
     /*
      * Whether to use wss

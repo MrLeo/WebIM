@@ -42,8 +42,8 @@
             friends: [],
         }),
         mounted() {
-            this.token = WebIM.utils.getCookie('webim_' + _vm.user.name)
-            console.log('token=>', this.token)
+            //this.token = WebIM.utils.getCookie('webim_' + _vm.user.name)
+            //console.log('token=>', this.token)
             this.init()
         },
         watch: {},
@@ -51,16 +51,20 @@
         methods: {
             init() {
                 let _t = this
+                _t.login()
+
                 //好友信息改变
                 _vm.$watch('friends', function (val, oldVal) {
                     console.log('friends change=>', val)
                     _t.$set(_t, 'friends', val)
                 })
+
                 //收到消息
                 _vm.$on('receiveMsg', ({msg, type}) => {
                     console.log('receiveMsg => ', {msg, type})
                     this.receiveMessage(msg, type)
                 })
+
                 //清空未读标记
                 _vm.$on('readed', (username) => {
                     this.friends.forEach(item => {
@@ -68,6 +72,28 @@
                             item['noread'] = 0
                         }
                     })
+                })
+            },
+            login() {
+                ////token登录
+                //_vm.IM.open({
+                //    apiUrl: WebIM.config.apiURL,
+                //    user: _vm.user.name,
+                //    accessToken: this.token,
+                //    appKey: WebIM.config.appkey
+                //});
+
+                //密码登录
+                _vm.IM.open({
+                    apiUrl: WebIM.config.apiURL,
+                    user: '112',
+                    pwd: '123456',
+                    appKey: WebIM.config.appkey,
+                    success: function (data) {
+                        console.log(`[Leo]登录成功 => `, data)
+                        let token = data.access_token;
+                        WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
+                    }
                 })
             },
             receiveMessage(msg, type) {

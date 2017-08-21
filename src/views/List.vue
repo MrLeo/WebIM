@@ -95,6 +95,7 @@
                         WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
                     }
                 })
+                this.title = '112'
             },
             receiveMessage(msg, type) {
                 let that = this

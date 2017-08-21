@@ -229,7 +229,7 @@
                             }
 //                            Demo.api.addToChatRecord(option, 'img');
 //                            Demo.api.appendMsg(option, 'img');
-                            _vm.chatMsg[this.$route.query.name].push(msgData)
+                            _vm.chatMsg[that.$route.query.name].push(msgData)
                         },
                         success: function () {                // 消息发送成功
                             console.log('[Success]图片发送成功');

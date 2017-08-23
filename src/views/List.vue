@@ -21,6 +21,7 @@
     import {Header, Button, Loadmore, CellSwipe, MessageBox, Popup} from 'mint-ui'
     import WebIM from 'WebIM'
     import {_vm} from "../utils/webim";
+    import axios from 'axios'
 
     export default {
         name: 'List',
@@ -42,39 +43,79 @@
             friends: [],
         }),
         mounted() {
-            //this.token = WebIM.utils.getCookie('webim_' + _vm.user.name)
-            //console.log('token=>', this.token)
+            _vm.code = this.$route.query.code || _vm.code
+            if (!_vm.code) {
+                alert('授权失败')
+                window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${_vm.appid}&redirect_uri=${window.location.href}&response_type=code&scope=snsapi_userinfo&state=1#wechat_redirect`
+                return
+            }
             this.init()
         },
         watch: {},
         computed: {},
         methods: {
             init() {
-                let _t = this
-                if (!_vm.user.name) _t.login('112', '123456')
+                try {
+                    let _t = this
 
-                //好友信息改变
-                _vm.$watch('friends', function (val, oldVal) {
-                    console.log('friends change=>', val)
-                    _t.$set(_t, 'friends', val)
-                })
+                    //获取登录用户授权信息
+                    let userInfo = this.getUserInfo()
 
-                //收到消息
-                _vm.$on('receiveMsg', ({msg, type}) => {
-                    console.log('receiveMsg => ', {msg, type})
-                    this.receiveMessage(msg, type)
-                })
+                    //登录环信
+                    if (!_vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
 
-                //清空未读标记
-                _vm.$on('readed', (username) => {
-                    this.friends.forEach(item => {
-                        if (item.name === username) {
-                            item['noread'] = 0
-                        }
+                    //好友信息改变
+                    _vm.$watch('friends', function (val, oldVal) {
+                        console.log('好友列表改变 => ', val)
+                        _t.$set(_t, 'friends', val)
                     })
-                })
+
+                    //收到消息
+                    _vm.$on('receiveMsg', ({msg, type}) => {
+                        console.log('收到消息 => ', {msg, type})
+                        this.receiveMessage(msg, type)
+                    })
+
+                    //清空未读标记
+                    _vm.$on('readed', (username) => {
+                        this.friends.forEach(item => {
+                            if (item.name === username) {
+                                item['noread'] = 0
+                            }
+                        })
+                    })
+                } catch (e) {
+                    alert('获取授权失败')
+                }
             },
-            login(username, password) {
+            /**
+             * 获取登录用户的信息
+             * @returns {Promise.<void>}
+             */
+            async getUserInfo() {
+                try {
+                    let data = await axios.get(`${_vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code})
+                    if (data.returnCode == "03") {
+                        alert("未获取到用户信息");
+                        return
+                    }
+                    window.localStorage.setItem("gxyUserID", data.userId);
+
+                    let userInfo = await axios.get(`${_vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId})
+                    console.log('用户信息 => ', userInfo)
+
+                    return userInfo.data
+                } catch (e) {
+                    console.error('获取用户信息失败 => ', e)
+                    alert('服务器异常')
+                }
+            },
+            /**
+             * 环信登录
+             * @param username
+             * @param password
+             */
+            hxLogin(username, password) {
                 ////token登录
                 //_vm.IM.open({
                 //    apiUrl: WebIM.config.apiURL,
@@ -82,7 +123,6 @@
                 //    accessToken: this.token,
                 //    appKey: WebIM.config.appkey
                 //});
-
                 //密码登录
                 _vm.IM.open({
                     apiUrl: WebIM.config.apiURL,
@@ -99,6 +139,11 @@
                 })
                 this.title = username
             },
+            /**
+             * 收到消息
+             * @param msg
+             * @param type
+             */
             receiveMessage(msg, type) {
                 let that = this
                 if (msg.from == _vm.user.name || msg.to == _vm.user.name) {
@@ -154,7 +199,11 @@
 //                    message: '加个好友呗!'
 //                });
             },
-            //region 标记已读
+            /**
+             * 标记已读
+             * @param item
+             * @returns {boolean}
+             */
             setReadStatus(item) {
                 console.log(`[Leo] => 已读`, item)
                 this.friends.forEach(f => {
@@ -164,21 +213,26 @@
                 })
                 return false
             },
-            //endregion
-            //region 删除列表项
+            /**
+             * 删除列表项
+             * @param item
+             * @returns {boolean}
+             */
             deleteMsg(item) {
                 console.log(`[Leo] => 删除`, item)
                 MessageBox({title: '提示', message: '确定执行此操作?', showCancelButton: true})
                 return false
             },
-            //endregion
-            //region 跳转页面
+            /**
+             * 跳转页面
+             * @param item
+             * @returns {boolean}
+             */
             toNextPage(item) {
                 console.log('toNextPage')
-                this.$router.push({path: '/chat', query: {name: item.name}})
+                this.$router.push({path: '/chat', query: {name: item.name, code: _vm.code}})
                 return false
             },
-            //endregion
             //region 列表顶部的下拉刷新
             loadTop() {
                 //TODO:加载数据

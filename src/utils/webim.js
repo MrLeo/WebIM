@@ -11,6 +11,9 @@ import language from './language'
 
 export let _vm = new Vue({
     data: {
+        host: 'http://www.360unicom.cn/gxy',
+        appid: 'wxc2af942951daed31',
+        code: '',
         lan: {},
         user: {
             id: '',

@@ -9,9 +9,10 @@ export default {
                 code: '',
                 lan: {},
                 user: {
+                    hxUser: '',
                     id: '',
                     name: '',
-                    pwd: '',
+                    pwd: '123456',
                     photo: ''
                 },
                 friends: [],
@@ -39,7 +40,7 @@ export default {
              */
             onOpened: function (message) {
                 console.log('[onOpened]连接成功 =>', message)
-                vm.IM.getRoster({
+                im.getRoster({
                     success: function (roster) {
                         console.log('获取好友信息', roster)
                         //获取好友列表，并进行好友列表渲染，roster格式为：
@@ -280,7 +281,7 @@ export default {
                             console.log('[Leo] =>', text)
                             Vue.$router.push({path: '/login'})
                         } else {
-                            console.error('[onError]=>',text)
+                            console.error('[onError]=>', text)
                         }
                     }
                 }

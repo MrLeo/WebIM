@@ -179,7 +179,7 @@
                 console.log(e)
                 var that = this
                 this.cancelEmoji()
-                let id = this.$$vm.IM.getUniqueId()// 生成本地消息id
+                let id = this.$$im.getUniqueId()// 生成本地消息id
                 let msg = new WebIM.message('img', id)// 创建图片消息
                 let file = WebIM.utils.getFileUrl(this.$refs.uploader)// 将图片转化为二进制文件
 
@@ -213,10 +213,10 @@
                             console.log('url=>', url)
                             var msgData = {
                                 info: {
-                                    from: this.$$vm.user.name,
+                                    from: that.$$vm.user.id,
                                     to: that.$route.query.name,
                                 },
-                                username: this.$$vm.user.name,
+                                username: that.$$vm.user.id,
                                 yourname: that.$route.query.name,
                                 msg: {
                                     type: 'img',
@@ -228,9 +228,9 @@
                             }
 //                            Demo.api.addToChatRecord(option, 'img');
 //                            Demo.api.appendMsg(option, 'img');
-                            this.$$vm.chatMsg[that.$route.query.name].push(msgData)
+                            that.$$vm.chatMsg[that.$route.query.name].push(msgData)
                         },
-                        success: function () {                // 消息发送成功
+                        success: function () {// 消息发送成功
                             console.log('[Success]图片发送成功');
                         },
                         flashUpload: WebIM.flashUpload

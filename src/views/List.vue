@@ -21,6 +21,7 @@
     import {Header, Button, Loadmore, CellSwipe, MessageBox, Popup} from 'mint-ui'
     import WebIM from 'WebIM'
     import axios from 'axios'
+    import uri from '../utils/url'
 
     export default {
         name: 'List',
@@ -42,12 +43,13 @@
             friends: [],
         }),
         mounted() {
-            this.$$vm.code = this.$route.query.code || this.$$vm.code
-            alert('code => ' + this.$$vm.code)
-            if (!this.$$vm.code) {
-                console.log('授权失败')
-                window.location.href = 'https://open.weixin.qq.com/connect/oauth2/authorize?response_type=code&scope=snsapi_userinfo&state=1&appid=' + this.$$vm.appid + '&redirect_uri=' + window.location.href + '#wechat_redirect'
-                return
+            this.$$vm.code = uri.getQueryString('code') || this.$$vm.code
+            if (process.env.NODE_ENV != 'development') {
+                if (!this.$$vm.code) {
+                    console.log('授权失败')
+                    window.location.href = 'https://open.weixin.qq.com/connect/oauth2/authorize?response_type=code&scope=snsapi_userinfo&state=1&appid=' + this.$$vm.appid + '&redirect_uri=' + window.location.href + '#wechat_redirect'
+                    return
+                }
             }
             this.init()
         },
@@ -59,54 +61,77 @@
                     let _t = this
 
                     //获取登录用户授权信息
-                    this.getUserInfo().then(userInfo => {
-                        alert('hxUser => ' + userInfo.hxUser)
-
-                        //登录环信
-                        if (!this.$$vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
-
-                        //好友信息改变
-                        this.$$vm.$watch('friends', function (val, oldVal) {
-                            console.log('好友列表改变 => ', val)
-                            _t.$set(_t, 'friends', val)
+                    if (process.env.NODE_ENV == 'development') {
+                        this.getUserInfo('7888bf9cf5cf41de8953538b4546870e').then(userInfo => {
+                            console.log('正在登陆环信')
+                            _t.hxLogin()
+                        }).catch(e => {
+                            alert('出错了 ：' + e.message)
                         })
-
-                        //收到消息
-                        this.$$vm.$on('receiveMsg', ({msg, type}) => {
-                            console.log('收到消息 => ', {msg, type})
-                            this.receiveMessage(msg, type)
+                    } else {
+                        this.getUserId().then(userId => {
+                            return this.getUserInfo(userId)
+                        }).then(userInfo => {
+                            console.log('正在登陆环信')
+                            _t.hxLogin()
+                        }).catch(e => {
+                            alert('出错了 ：' + e.message)
                         })
+                    }
 
-                        //清空未读标记
-                        this.$$vm.$on('readed', (username) => {
-                            this.friends.forEach(item => {
-                                if (item.name === username) {
-                                    item['noread'] = 0
-                                }
-                            })
+                    //好友信息改变
+                    this.$$vm.$watch('friends', function (val, oldVal) {
+                        console.log('好友列表改变 => ', val)
+                        _t.$set(_t, 'friends', val)
+                    })
+
+                    //收到消息
+                    this.$$vm.$on('receiveMsg', ({msg, type}) => {
+                        console.log('收到消息 => ', {msg, type})
+                        this.receiveMessage(msg, type)
+                    })
+
+                    //清空未读标记
+                    this.$$vm.$on('readed', (username) => {
+                        this.friends.forEach(item => {
+                            if (item.name === username) {
+                                item['noread'] = 0
+                            }
                         })
-                    }).catch(e => {
-                        alert(e.message)
                     })
                 } catch (e) {
                     alert('获取授权失败')
                 }
             },
             /**
+             * 根据微信CODE获取用户ID
+             * @returns {Promise.<void>}
+             */
+            getUserId() {
+                return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {params: {CODE: this.$$vm.code}}).then(res => {
+                    if (res.data.returnCode == "03") throw new Error('未获取到用户信息');
+                    return res.data.userId
+                }).catch(e => {
+                    alert('出错了 ：' + e.message)
+                })
+            },
+            /**
              * 获取登录用户的信息
              * @returns {Promise.<void>}
              */
-            getUserInfo() {
-                return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code}).then(data => {
-                    if (data.returnCode == "03") {
-                        alert("未获取到用户信息");
-                        throw new Error('未获取到用户信息');
-                    }
-                    return axios.get(`${this.$$vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId}).then(userInfo => {
-                        console.log('用户信息 => ', userInfo)
-                        alert('获得用户信息=>', JSON.stringify(userInfo.data))
-                        return userInfo.data
-                    })
+            getUserInfo(userId) {
+                return axios.get(`${this.$$vm.host}/api/gaouser/gaoUser/userdetail`, {params: {'user_id': userId}}).then(userInfo => {
+                    console.log('用户信息 => ', userInfo)
+                    if (!userInfo.data.data) throw new Error('获取用户信息失败')
+
+                    this.$$vm.user.id = userInfo.data.data.id
+                    this.title = this.$$vm.user.name = userInfo.data.data.name
+                    this.$$vm.user.hxUser = userInfo.data.data.hxUser
+                    this.$$vm.user.photo = userInfo.data.data.photo
+
+                    return userInfo.data.data
+                }).catch(e => {
+                    alert('出错了 ：' + e.message)
                 })
             },
             /**
@@ -114,29 +139,27 @@
              * @param username
              * @param password
              */
-            hxLogin(username, password) {
-                ////token登录
-                //this.$$im.open({
-                //    apiUrl: WebIM.config.apiURL,
-                //    user: this.$$vm.user.name,
-                //    accessToken: this.token,
-                //    appKey: WebIM.config.appkey
-                //});
-                //密码登录
-                this.$$im.open({
-                    apiUrl: WebIM.config.apiURL,
-                    user: username,
-                    pwd: password,
-                    appKey: WebIM.config.appkey,
-                    success: function (data) {
-                        console.log(`[Leo]登录成功 => `, data)
-                        let token = data.access_token;
-                        WebIM.utils.setCookie('webim_' + this.$$vm.user.name, token, 1);
-                        this.$$vm.user.name = username
-                        this.$$vm.user.pwd = password
+            hxLogin() {
+                try {
+                    var _t = this
+                    if (this.$$vm.user.hxUser) {
+                        this.$$im.open({
+                            apiUrl: WebIM.config.apiURL,
+                            user: this.$$vm.user.hxUser,
+                            pwd: this.$$vm.user.pwd,
+                            appKey: WebIM.config.appkey,
+                            success: function (data) {
+                                console.log(`[Leo]登录成功 => `, data)
+                                let token = data.access_token;
+                                WebIM.utils.setCookie('webim_' + _t.$$vm.user.hxUser, token, 1);
+                            }
+                        })
+                    } else {
+                        throw new Error('无法登录IM')
                     }
-                })
-                this.title = username
+                } catch (e) {
+                    alert(e.message)
+                }
             },
             /**
              * 收到消息
@@ -145,7 +168,7 @@
              */
             receiveMessage(msg, type) {
                 let that = this
-                if (msg.from == this.$$vm.user.name || msg.to == this.$$vm.user.name) {
+                if (msg.from == this.$$vm.user.hxUser || msg.to == this.$$vm.user.hxUser) {
                     if (type == 'txt') {
                         var value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
                     } else if (type == 'emoji') {

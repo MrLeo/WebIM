@@ -18,7 +18,7 @@
 
 <script>
     import WebIM from 'WebIM'
-    import {_vm} from "../utils/webim";
+    import {$vm} from "../utils/webim";
 
     export default {
         name: '',
@@ -38,20 +38,20 @@
             login() {
                 let _this = this
 
-                _vm.user.name = _this.name
-                _vm.user.pwd = _this.pwd
+                this.$$vm.user.name = _this.name
+                this.$$vm.user.pwd = _this.pwd
 
                 // region 登录
-                _vm.IM.open({
+                this.$$im.open({
                     apiUrl: WebIM.config.apiURL,
-                    user: _vm.user.name,
-                    pwd: _vm.user.pwd,
+                    user: this.$$vm.user.name,
+                    pwd: this.$$vm.user.pwd,
                     appKey: WebIM.config.appkey,
                     success: function (data) {
                         console.log(`[Leo]登录成功 => `, data)
                         this.token = data.access_token;
-                        WebIM.utils.setCookie('webim_' + _vm.user.name, this.token, 1);
-                        WebIM.utils.setCookie('webim_' + _vm.user.name, this.token, 1);
+                        WebIM.utils.setCookie('webim_' + this.$$vm.user.name, this.token, 1);
+                        WebIM.utils.setCookie('webim_' + this.$$vm.user.name, this.token, 1);
                         _this.$router.push({path: '/'})
                     },
                     error: function (e) {

@@ -20,7 +20,6 @@
 <script>
     import {Header, Button, Loadmore, CellSwipe, MessageBox, Popup} from 'mint-ui'
     import WebIM from 'WebIM'
-    import {_vm} from "../utils/webim";
     import axios from 'axios'
 
     export default {
@@ -43,10 +42,10 @@
             friends: [],
         }),
         mounted() {
-            _vm.code = this.$route.query.code || _vm.code
-            if (!_vm.code) {
-                alert('授权失败')
-                window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${_vm.appid}&redirect_uri=${window.location.href}&response_type=code&scope=snsapi_userinfo&state=1#wechat_redirect`
+            this.$$vm.code = this.$route.query.code || this.$$vm.code
+            if (!this.$$vm.code) {
+                console.log('授权失败')
+                window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${this.$$vm.appid}&redirect_uri=${window.location.href}&response_type=code&scope=snsapi_userinfo&state=1#wechat_redirect`
                 return
             }
             this.init()
@@ -62,22 +61,22 @@
                     let userInfo = this.getUserInfo()
 
                     //登录环信
-                    if (!_vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
+                    if (!this.$$vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
 
                     //好友信息改变
-                    _vm.$watch('friends', function (val, oldVal) {
+                    this.$$vm.$watch('friends', function (val, oldVal) {
                         console.log('好友列表改变 => ', val)
                         _t.$set(_t, 'friends', val)
                     })
 
                     //收到消息
-                    _vm.$on('receiveMsg', ({msg, type}) => {
+                    this.$$vm.$on('receiveMsg', ({msg, type}) => {
                         console.log('收到消息 => ', {msg, type})
                         this.receiveMessage(msg, type)
                     })
 
                     //清空未读标记
-                    _vm.$on('readed', (username) => {
+                    this.$$vm.$on('readed', (username) => {
                         this.friends.forEach(item => {
                             if (item.name === username) {
                                 item['noread'] = 0
@@ -94,15 +93,14 @@
              */
             async getUserInfo() {
                 try {
-                    let data = await axios.get(`${_vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code})
+                    let data = await axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code})
                     if (data.returnCode == "03") {
                         alert("未获取到用户信息");
                         return
                     }
-                    window.localStorage.setItem("gxyUserID", data.userId);
-
-                    let userInfo = await axios.get(`${_vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId})
+                    let userInfo = await axios.get(`${this.$$vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId})
                     console.log('用户信息 => ', userInfo)
+                    alert('获得用户信息=>', JSON.stringify(userInfo.data))
 
                     return userInfo.data
                 } catch (e) {
@@ -117,14 +115,14 @@
              */
             hxLogin(username, password) {
                 ////token登录
-                //_vm.IM.open({
+                //this.$$im.open({
                 //    apiUrl: WebIM.config.apiURL,
-                //    user: _vm.user.name,
+                //    user: this.$$vm.user.name,
                 //    accessToken: this.token,
                 //    appKey: WebIM.config.appkey
                 //});
                 //密码登录
-                _vm.IM.open({
+                this.$$im.open({
                     apiUrl: WebIM.config.apiURL,
                     user: username,
                     pwd: password,
@@ -132,9 +130,9 @@
                     success: function (data) {
                         console.log(`[Leo]登录成功 => `, data)
                         let token = data.access_token;
-                        WebIM.utils.setCookie('webim_' + _vm.user.name, token, 1);
-                        _vm.user.name = username
-                        _vm.user.pwd = password
+                        WebIM.utils.setCookie('webim_' + this.$$vm.user.name, token, 1);
+                        this.$$vm.user.name = username
+                        this.$$vm.user.pwd = password
                     }
                 })
                 this.title = username
@@ -146,7 +144,7 @@
              */
             receiveMessage(msg, type) {
                 let that = this
-                if (msg.from == _vm.user.name || msg.to == _vm.user.name) {
+                if (msg.from == this.$$vm.user.name || msg.to == this.$$vm.user.name) {
                     if (type == 'txt') {
                         var value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
                     } else if (type == 'emoji') {
@@ -185,8 +183,8 @@
                         }
                     })
 
-                    if (!_vm.chatMsg.hasOwnProperty(msg.from)) _vm.chatMsg[msg.from] = []
-                    _vm.chatMsg[msg.from].push(msgData)
+                    if (!this.$$vm.chatMsg.hasOwnProperty(msg.from)) this.$$vm.chatMsg[msg.from] = []
+                    this.$$vm.chatMsg[msg.from].push(msgData)
                 }
             },
             addFriend() {
@@ -230,7 +228,7 @@
              */
             toNextPage(item) {
                 console.log('toNextPage')
-                this.$router.push({path: '/chat', query: {name: item.name, code: _vm.code}})
+                this.$router.push({path: '/chat', query: {name: item.name, code: this.$$vm.code}})
                 return false
             },
             //region 列表顶部的下拉刷新

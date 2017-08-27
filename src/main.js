@@ -28,12 +28,14 @@ import router from './router'
 import FastClick from 'fastclick'
 import 'mint-ui/lib/style.css'
 
-import './utils/webim'
+import IM from './plugin/webim'
+
+Vue.use(IM)
 
 Vue.config.productionTip = false//关闭生产模式下给出的提示
 
 /* eslint-disable no-new */
-window.$vm = new Vue({
+window._vm = new Vue({
     el: '#app',
     router,
     // store,

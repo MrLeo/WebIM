@@ -67,10 +67,10 @@ module.exports = {
     // 增加一个plugin
     plugins: [
         new webpack.ProvidePlugin({
-            WebIM: "WebIM"
+            WebIM: "window.WebIM"
         })
     ],
     externals: {
-        WebIM: "WebIM"
+        WebIM: "window.WebIM",
     }
 }

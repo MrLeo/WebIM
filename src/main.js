@@ -34,6 +34,12 @@ Vue.use(IM)
 
 Vue.config.productionTip = false//关闭生产模式下给出的提示
 
+if ('addEventListener' in document) {
+    document.addEventListener('DOMContentLoaded', function () {
+        FastClick.attach(document.body);
+    }, false);
+}
+
 /* eslint-disable no-new */
 window._vm = new Vue({
     el: '#app',
@@ -42,9 +48,3 @@ window._vm = new Vue({
     template: '<App/>',
     components: {App}
 })
-
-if ('addEventListener' in document) {
-    document.addEventListener('DOMContentLoaded', function () {
-        FastClick.attach(document.body);
-    }, false);
-}

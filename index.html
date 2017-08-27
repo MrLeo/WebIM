@@ -17,13 +17,23 @@
     <title>IM</title>
     <link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/4.1.1/normalize.css"/>
     <script type='text/javascript' src="./static/js/browser-polyfill.min.js"></script>
+    <!--webim-->
+    <script type='text/javascript' src='./static/js/webim.config.js'></script>
 </head>
 <body>
 <div id="app"></div>
 <!-- built files will be auto injected -->
-<script type='text/javascript' src='./static/js/webim.config.js'></script>
-<script type='text/javascript' src='./static/js/strophe-1.2.8.min.js'></script>
-<script type='text/javascript' src='./static/js/websdk-1.4.12.min.js'></script>
+<script>
+    console.log('WebIM => ', WebIM)
+    if (WebIM.config.isDebug) {
+        document.write("<script src='./static/js/strophe-1.2.8.js'><\/script>");
+        document.write("<script src='./static/js/websdk-1.4.12.js'><\/script>");
+    } else {
+        <!--A JavaScript library for XMPP over Websocket-->
+        document.write("<script src='./static/js/strophe-1.2.8.min.js'><\/script>");
+        document.write("<script src='./static/js/websdk-1.4.12.min.js'><\/script>");
+    }
+</script>
 <script type='text/javascript' src='./static/js/websdk.shim.js'></script>
 </body>
 </html>

@@ -18,7 +18,6 @@
 
 <script>
     import WebIM from 'WebIM'
-    import {$vm} from "../utils/webim";
 
     export default {
         name: '',

@@ -43,9 +43,10 @@
         }),
         mounted() {
             this.$$vm.code = this.$route.query.code || this.$$vm.code
+            alert('code => ' + this.$$vm.code)
             if (!this.$$vm.code) {
                 console.log('授权失败')
-                window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${this.$$vm.appid}&redirect_uri=${window.location.href}&response_type=code&scope=snsapi_userinfo&state=1#wechat_redirect`
+                window.location.href = 'https://open.weixin.qq.com/connect/oauth2/authorize?response_type=code&scope=snsapi_userinfo&state=1&appid=' + this.$$vm.appid + '&redirect_uri=' + window.location.href + '#wechat_redirect'
                 return
             }
             this.init()
@@ -58,30 +59,34 @@
                     let _t = this
 
                     //获取登录用户授权信息
-                    let userInfo = this.getUserInfo()
+                    this.getUserInfo().then(userInfo => {
+                        alert('hxUser => ' + userInfo.hxUser)
 
-                    //登录环信
-                    if (!this.$$vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
+                        //登录环信
+                        if (!this.$$vm.user.name) _t.hxLogin(userInfo.hxUser, '123456')
 
-                    //好友信息改变
-                    this.$$vm.$watch('friends', function (val, oldVal) {
-                        console.log('好友列表改变 => ', val)
-                        _t.$set(_t, 'friends', val)
-                    })
-
-                    //收到消息
-                    this.$$vm.$on('receiveMsg', ({msg, type}) => {
-                        console.log('收到消息 => ', {msg, type})
-                        this.receiveMessage(msg, type)
-                    })
-
-                    //清空未读标记
-                    this.$$vm.$on('readed', (username) => {
-                        this.friends.forEach(item => {
-                            if (item.name === username) {
-                                item['noread'] = 0
-                            }
+                        //好友信息改变
+                        this.$$vm.$watch('friends', function (val, oldVal) {
+                            console.log('好友列表改变 => ', val)
+                            _t.$set(_t, 'friends', val)
                         })
+
+                        //收到消息
+                        this.$$vm.$on('receiveMsg', ({msg, type}) => {
+                            console.log('收到消息 => ', {msg, type})
+                            this.receiveMessage(msg, type)
+                        })
+
+                        //清空未读标记
+                        this.$$vm.$on('readed', (username) => {
+                            this.friends.forEach(item => {
+                                if (item.name === username) {
+                                    item['noread'] = 0
+                                }
+                            })
+                        })
+                    }).catch(e => {
+                        alert(e.message)
                     })
                 } catch (e) {
                     alert('获取授权失败')
@@ -91,22 +96,18 @@
              * 获取登录用户的信息
              * @returns {Promise.<void>}
              */
-            async getUserInfo() {
-                try {
-                    let data = await axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code})
+            getUserInfo() {
+                return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {CODE: this.$route.query.code}).then(data => {
                     if (data.returnCode == "03") {
                         alert("未获取到用户信息");
-                        return
+                        throw new Error('未获取到用户信息');
                     }
-                    let userInfo = await axios.get(`${this.$$vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId})
-                    console.log('用户信息 => ', userInfo)
-                    alert('获得用户信息=>', JSON.stringify(userInfo.data))
-
-                    return userInfo.data
-                } catch (e) {
-                    console.error('获取用户信息失败 => ', e)
-                    alert('服务器异常')
-                }
+                    return axios.get(`${this.$$vm.host}/api/gaouser/gaoUser/userdetail`, {userId: data.userId}).then(userInfo => {
+                        console.log('用户信息 => ', userInfo)
+                        alert('获得用户信息=>', JSON.stringify(userInfo.data))
+                        return userInfo.data
+                    })
+                })
             },
             /**
              * 环信登录

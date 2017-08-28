@@ -16,6 +16,7 @@ export default {
                     photo: ''
                 },
                 friends: [],
+                doctors: {},
                 chatMsg: {},
                 errorType: -1
             }

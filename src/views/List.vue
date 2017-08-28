@@ -9,6 +9,7 @@
                         li.list__item(v-for="(item,index) in friends", @click="toNextPage(item)")
                             mt-cell-swipe(:title="item.name", :right="[{content: '&nbsp;', style: {background: '#FFF'}}, {content: '已读', style: {background: 'lightgray', color: '#fff'}, handler: () => {return setReadStatus(item)}}]")
                                 span.noread(v-if="item.noread") {{item.noread}}
+                                img(slot="icon", :src="item.photo || require('../assets/img/header.jpg')", width="24", height="24")
         mt-popup(v-model="popupVisible", popup-transition="popup-fade")
             .pop-body
                 input(v-model="friendName")
@@ -46,7 +47,7 @@
             this.$$vm.code = uri.getQueryString('code') || this.$$vm.code
             if (process.env.NODE_ENV != 'development') {
                 if (!this.$$vm.code) {
-                    console.log('授权失败')
+                    console.log('无授权code')
                     window.location.href = 'https://open.weixin.qq.com/connect/oauth2/authorize?response_type=code&scope=snsapi_userinfo&state=1&appid=' + this.$$vm.appid + '&redirect_uri=' + window.location.href + '#wechat_redirect'
                     return
                 }
@@ -61,23 +62,15 @@
                     let _t = this
 
                     //获取登录用户授权信息
-                    if (process.env.NODE_ENV == 'development') {
-                        this.getUserInfo('7888bf9cf5cf41de8953538b4546870e').then(userInfo => {
-                            console.log('正在登陆环信')
-                            _t.hxLogin()
-                        }).catch(e => {
-                            alert('出错了 ：' + e.message)
-                        })
-                    } else {
-                        this.getUserId().then(userId => {
-                            return this.getUserInfo(userId)
-                        }).then(userInfo => {
-                            console.log('正在登陆环信')
-                            _t.hxLogin()
-                        }).catch(e => {
-                            alert('出错了 ：' + e.message)
-                        })
-                    }
+                    this.getUserId().then(userId => {
+                        this.getDocList(userId)
+                        return this.getUserInfo(userId)
+                    }).then(userInfo => {
+                        console.log('正在登陆环信')
+                        _t.hxLogin()
+                    }).catch(e => {
+                        alert('出错了 ：' + e.message)
+                    })
 
                     //好友信息改变
                     this.$$vm.$watch('friends', function (val, oldVal) {
@@ -108,6 +101,11 @@
              * @returns {Promise.<void>}
              */
             getUserId() {
+                if (process.env.NODE_ENV === 'development') {
+                    return new Promise(function (resolve, reject) {
+                        resolve('7888bf9cf5cf41de8953538b4546870e')
+                    })
+                }
                 return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {params: {CODE: this.$$vm.code}}).then(res => {
                     if (res.data.returnCode == "03") throw new Error('未获取到用户信息');
                     return res.data.userId
@@ -132,6 +130,15 @@
                     return userInfo.data.data
                 }).catch(e => {
                     alert('出错了 ：' + e.message)
+                })
+            },
+            /**
+             * 医生列表
+             */
+            getDocList(userId) {
+                return axios.get(`${this.$$vm.host}/api/hzanddoc/gaoHzanddoc/DocList`, {params: {'user_id': userId}}).then(res => {
+                    console.log('Doc List =>', res)
+
                 })
             },
             /**

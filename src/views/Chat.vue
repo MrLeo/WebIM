@@ -1,20 +1,20 @@
 <template lang="pug">
     .page.page-current
         //-顶部导航
-        mt-header(fixed,:title="title")
+        mt-header(fixed,:title="username")
             router-link(to="/" slot="left")
                 mt-button(icon="back") 返回
         //-消息列表
         main
             mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
                 .list
-                    .message(v-for="item in chatMsg",:class="{self:item.style}")
+                    .message(v-for="item in chatListGetter",:class="{self:item.style}")
                         .time
                             span {{item.time}}
                         .main(:class="item.style")
                             .user
                                 span {{ item.username }}
-                            img.avatar(src="../assets/images/number.png")
+                            img.avatar(:src="item.avatar")
                             .msg
                                 template(v-if="item.msg.type == 'img' || item.msg.type == 'audio' || item.msg.type == 'video'")
                                     component(:is="'v-'+item.msg.type", :data="item.msg.data || item.msg.url")
@@ -61,7 +61,6 @@
             vTxt, vEmoji, vImg, vVideo, vAudio
         },
         data: () => ({
-            title: '',
             username: '',
             allLoaded: false,//底部数据全部获取完毕
             Emoji: WebIM.Emoji,
@@ -85,24 +84,39 @@
             inputMessage: []
         }),
         created() {
-            this.title = this.$route.query.name || ''
-            this.username = this.$route.query.name || ''
-            if (!this.$$vm.chatMsg.hasOwnProperty(this.$route.query.name)) this.$$vm.chatMsg[this.$route.query.name] = []
-            this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.$route.query.name])
+            this.username = this.$$vm.currDoc['user_name'] || ''
+            if (!this.$$vm.chatMsg.hasOwnProperty(this.$$vm.currDoc['hxUser'])) this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']] = []
+            this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']])
         },
         mounted() {
             this.init()
         },
         watch: {},
-        computed: {},
+        computed: {
+            chatListGetter() {
+                return this.chatMsg.map(item => {
+                    if (item.style === 'self') {
+                        item.avatar = this.$$vm.user.photo
+                        item.username = this.$$vm.user.name
+                    } else {
+                        item.avatar = this.$$vm.currDoc.avatar
+                        item.username = this.$$vm.currDoc['user_name']
+                    }
+                    if (!item.avatar) {
+                        item.avatar = require('../assets/images/number.png')
+                    }
+                    return item
+                })
+            }
+        },
         methods: {
             init() {
-                this.$$vm.$watch('chatMsg', (val, oldVal) => {
-                    console.log('chatMsg change=>', val)
+                this.$$vm.$watch(`chatMsg.${this.$$vm.currDoc['hxUser']}`, (val, oldVal) => {
+                    console.log('[Leo]chatMsg change=>', val)
                     this.$set(this, 'chatMsg', val)
+                    this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
                 })
-
-                this.$$vm.$emit('readed', this.$route.query.name)
+                this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
             },
             sendMessage() {
                 if (!this.inputMessage.trim()) return;
@@ -111,13 +125,12 @@
                 let message = new WebIM.message('txt', id);
                 message.set({
                     msg: this.inputMessage,
-                    to: this.$route.query.name,
+                    to: this.$$vm.currDoc['hxUser'],
                     roomType: false,
                     success: function (id, serverMsgId) {
-                        //console.log('success')
+                        //console.log('[Leo]=>success')
                     }
                 });
-                // //console.log(msg)
                 message.body.chatType = 'singleChat';
                 this.$$im.send(message.body);
                 if (message) {
@@ -127,7 +140,7 @@
                         info: {
                             to: message.body.to
                         },
-                        username: this.$$vm.user.name,
+                        username: this.$$vm.user.hxUser,
                         yourname: message.body.to,
                         msg: {
                             type: message.type,
@@ -137,7 +150,7 @@
                         time: time,
                         mid: message.id
                     }
-                    this.$$vm.chatMsg[this.$route.query.name].push(msgData)
+                    this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']].push(msgData)
 
                     that.userMessage = ''
                     that.inputMessage = ''
@@ -176,7 +189,6 @@
             //endregion
             //region 图片
             sendImage(e) {
-                console.log(e)
                 var that = this
                 this.cancelEmoji()
                 let id = this.$$im.getUniqueId()// 生成本地消息id
@@ -203,21 +215,21 @@
                         roomType: false,
                         chatType: 'singleChat',
                         onFileUploadError: function (error) {      // 消息上传失败
-                            console.log('[onFileUploadError]图片上传失败=>', error);
+                            console.log('[Leo]onFileUploadError:图片上传失败=>', error);
                         },
                         onFileUploadComplete: function (data) {   // 消息上传成功
-                            console.log('[onFileUploadComplete]图片上传成功=>', data);
+                            console.log('[Leo]onFileUploadComplete:图片上传成功=>', data);
                             let url = ((location.protocol != 'https:' && WebIM.config.isHttpDNS) ? (this.$$vm.apiUrl + data.uri.substr(data.uri.indexOf("/", 9))) : data.uri) + '/' + data.entities[0].uuid;
                             that.$refs.uploader.value = null;
                             let time = WebIM.time()
-                            console.log('url=>', url)
+                            console.log('[Leo]url=>', url)
                             var msgData = {
                                 info: {
-                                    from: that.$$vm.user.id,
-                                    to: that.$route.query.name,
+                                    from: that.$$vm.user.hxUser,
+                                    to: that.$$vm.currDoc.hxUser,
                                 },
-                                username: that.$$vm.user.id,
-                                yourname: that.$route.query.name,
+                                username: that.$$vm.user.hxUser,
+                                yourname: that.$$vm.currDoc.hxUser,
                                 msg: {
                                     type: 'img',
                                     data: url
@@ -226,12 +238,10 @@
                                 time: time,
                                 mid: 'img' + id,
                             }
-//                            Demo.api.addToChatRecord(option, 'img');
-//                            Demo.api.appendMsg(option, 'img');
-                            that.$$vm.chatMsg[that.$route.query.name].push(msgData)
+                            that.$$vm.chatMsg[that.$$vm.currDoc['hxUser']].push(msgData)
                         },
                         success: function () {// 消息发送成功
-                            console.log('[Success]图片发送成功');
+                            console.log('[Leo]图片发送成功');
                         },
                         flashUpload: WebIM.flashUpload
                     }

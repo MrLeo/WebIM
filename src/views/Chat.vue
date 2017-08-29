@@ -5,9 +5,9 @@
             router-link(to="/" slot="left")
                 mt-button(icon="back") 返回
         //-消息列表
-        main
+        main(ref="main")
             mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
-                .list
+                .list(ref="list")
                     .message(v-for="item in chatListGetter",:class="{self:item.style}")
                         .time
                             span {{item.time}}
@@ -91,7 +91,14 @@
         mounted() {
             this.init()
         },
-        watch: {},
+        watch: {
+            chatMsg(val, oldVal) {
+                this.$nextTick(()=>{
+                    console.log( this.$refs.list.scrollHeight)
+                    this.$refs.main.scrollTop = this.$refs.list.scrollHeight
+                })
+            }
+        },
         computed: {
             chatListGetter() {
                 return this.chatMsg.map(item => {
@@ -111,10 +118,12 @@
         },
         methods: {
             init() {
+                this.$refs.main.scrollTop = this.$refs.list.scrollHeight
                 this.$$vm.$watch(`chatMsg.${this.$$vm.currDoc['hxUser']}`, (val, oldVal) => {
                     console.log('[Leo]chatMsg change=>', val)
                     this.$set(this, 'chatMsg', val)
                     this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
+                    //document.querySelectorAll('.page-current main')[0].scrollTop=document.querySelectorAll('.page-current .list')[0].scrollHeight
                 })
                 this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
             },

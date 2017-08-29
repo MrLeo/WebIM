@@ -5,7 +5,7 @@ export default {
         var vm = new Vue({
             data: {
                 host: 'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
-                appid: 'wxc2af942951daed31',
+                appid: 'wx19600a1d8ebcf0fa',//'wxc2af942951daed31',
                 code: '',
                 lan: {},
                 user: {

@@ -119,7 +119,6 @@ export default {
              */
             onLocationMessage: function (message) {
                 console.log('[Leo]onLocationMessage:收到位置消息 =>', message)
-                vm.$emit('receiveMsg', {msg: message, type: 'img'})
             },
             /**
              * 收到文件消息
@@ -127,7 +126,6 @@ export default {
              */
             onFileMessage: function (message) {
                 console.log('[Leo]onFileMessage收到文件消息 =>', message)
-                // evenBus.$emit('receiveMsg', {msg: message, type: 'img'})
             },
             /**
              * 收到视频消息
@@ -135,21 +133,6 @@ export default {
              */
             onVideoMessage: function (message) {
                 console.log('[Leo]onVideoMessage:收到视频消息 =>', message)
-                var node = document.getElementById('privateVideo');
-                var option = {
-                    url: message.url,
-                    headers: {
-                        'Accept': 'audio/mp4'
-                    },
-                    onFileDownloadComplete: function (response) {
-                        var objectURL = WebIM.utils.parseDownloadResponse.call(IM, response);
-                        node.src = objectURL;
-                    },
-                    onFileDownloadError: function () {
-                        console[console.error ? 'error' : 'log']('File down load error.')
-                    }
-                };
-                WebIM.utils.download.call(IM, option);
             },
             /**
              * 处理“广播”或“发布-订阅”消息，如联系人订阅请求、处理群组、聊天室被踢解散等消息
@@ -160,31 +143,31 @@ export default {
                 console.log('[Leo]onPresence:“广播”或“发布-订阅”消息 =>', message)
 
                 //（发送者希望订阅接收者的出席信息），即别人申请加你为好友
-                if (e.type === 'subscribe') {
+                if (message.type === 'subscribe') {
                     //若e.status中含有[resp:true],则表示为对方同意好友后反向添加自己为好友的消息，demo中发现此类消息，默认同意操作，完成双方互为好友；如果不含有[resp:true]，则表示为正常的对方请求添加自己为好友的申请消息。
                     /*同意添加好友操作的实现方法*/
-                    vm.IM.subscribed({
+                    im.subscribed({
                         to: vm.user.name,
                         message: '[resp:true]'
                     });
-                    vm.IM.subscribe({//需要反向添加对方好友
-                        to: e.from,
+                    im.subscribe({//需要反向添加对方好友
+                        to: message.from,
                         message: '[resp:true]'
                     });
                 }
 
                 //(发送者允许接收者接收他们的出席信息)，即别人同意你加他为好友
-                if (e.type === 'subscribed') {
+                if (message.type === 'subscribed') {
 
                 }
 
                 //（发送者取消订阅另一个实体的出席信息）,即删除现有好友
-                if (e.type === 'unsubscribe') {
+                if (message.type === 'unsubscribe') {
 
                 }
 
                 //（订阅者的请求被拒绝或以前的订阅被取消），即对方单向的删除了好友
-                if (e.type === 'unsubscribed') {
+                if (message.type === 'unsubscribed') {
 
                 }
             },
@@ -229,11 +212,11 @@ export default {
                         console.error('[onError]=>', vm.lan.refuse)
                         return
                     case WebIM.statusCode.WEBIM_CONNCTION_DISCONNECTED:
-                        if (vm.IM.autoReconnectNumTotal < vm.IM.autoReconnectNumMax) {
-                            vm.IM.errorType = message.type;
+                        if (im.autoReconnectNumTotal < im.autoReconnectNumMax) {
+                            im.errorType = message.type;
                             return;
                         }
-                        vm.IM.reconnect()
+                        im.reconnect()
                         Vue.$router.push({path: '/login'})
                 }
 
@@ -241,37 +224,12 @@ export default {
                     text = message.data.data;
                     if (JSON.parse(message.data.data)['error_description'] === 'user not found') {
                         text = vm.lan.userDoesNotExist
-                        // evenBus.IM.registerUser({
-                        //     username: evenBus.user.name,
-                        //     password: evenBus.user.pwd,
-                        //     nickname: evenBus.user.name,
-                        //     appKey: WebIM.config.appkey,
-                        //     success: function () {
-                        //         console.log('[Leo] => 自动注册成功')
-                        //         evenBus.IM.open({
-                        //             apiUrl: WebIM.config.apiURL,
-                        //             user: evenBus.user.name,
-                        //             pwd: evenBus.user.pwd,
-                        //             appKey: WebIM.config.appkey,
-                        //             success: function (data) {
-                        //                 console.log('[Leo] => 自动登录成功')
-                        //                 let token = data.access_token;
-                        //                 WebIM.utils.setCookie('webim_' + evenBus.user.name, token, 1);
-                        //                 Vue.$router.push({path: '/'})
-                        //             },
-                        //         })
-                        //     },
-                        //     error: function () {
-                        //         console.error('[Leo] => 自动注册失败')
-                        //     },
-                        //     apiUrl: WebIM.config.apiURL
-                        // })
                     }
                 } else {
                     text = WebIM.utils.getObjectKey(WebIM.statusCode, message.type) + ' ' + ' type=' + message.type;
                 }
 
-                if (vm.IM.errorType != WebIM.statusCode.WEBIM_CONNCTION_CLIENT_LOGOUT) {
+                if (im.errorType != WebIM.statusCode.WEBIM_CONNCTION_CLIENT_LOGOUT) {
                     if (message.type === WebIM.statusCode.WEBIM_CONNECTION_ACCEPT_INVITATION_FROM_GROUP
                         || message.type === WebIM.statusCode.WEBIM_CONNECTION_DECLINE_INVITATION_FROM_GROUP
                         || message.type === WebIM.statusCode.WEBIM_CONNECTION_ACCEPT_JOIN_GROUP

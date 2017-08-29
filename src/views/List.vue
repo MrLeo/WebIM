@@ -89,9 +89,6 @@
             getUserId() {
                 if (process.env.NODE_ENV === 'development') {
                     return Promise.resolve('7888bf9cf5cf41de8953538b4546870e')
-                    // return new Promise((resolve, reject) => {
-                    //     resolve('7888bf9cf5cf41de8953538b4546870e')
-                    // })
                 }
                 return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {params: {CODE: this.$$vm.code}}).then(res => {
                     if (res.data.returnCode == "03") throw new Error('未获取到用户信息');
@@ -133,8 +130,6 @@
             },
             /**
              * 环信登录
-             * @param username
-             * @param password
              */
             hxLogin() {
                 try {

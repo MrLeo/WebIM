@@ -4,7 +4,7 @@ export default {
     install: function (Vue, options) {
         var vm = new Vue({
             data: {
-                host: 'http://xhh.tunnel.qydev.com',//'http://www.360unicom.cn/gxy',
+                host: 'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
                 appid: 'wxc2af942951daed31',
                 code: '',
                 lan: {},
@@ -15,7 +15,9 @@ export default {
                     pwd: '123456',
                     photo: ''
                 },
-                friends: [],
+                // friends: [],
+                doctors: {},
+                currDoc: {},
                 chatMsg: {},
                 errorType: -1
             }
@@ -39,43 +41,45 @@ export default {
              * @param message
              */
             onOpened: function (message) {
-                console.log('[onOpened]连接成功 =>', message)
-                im.getRoster({
-                    success: function (roster) {
-                        console.log('获取好友信息', roster)
-                        //获取好友列表，并进行好友列表渲染，roster格式为：
-                        // [
-                        //     {
-                        //         jid:'asemoemo#chatdemoui_test1@easemob.com',
-                        //         name:'test1',
-                        //         subscription: 'both'
-                        //     }
-                        // ]
-                        for (var i = 0, l = roster.length; i < l; i++) {
-                            var ros = roster[i];
-                            //ros.subscription值为both/to为要显示的联系人，此处与APP需保持一致，才能保证两个客户端登录后的好友列表一致
-                            if (ros.subscription === 'both' || ros.subscription === 'to') {
-                                ros.noread = 0
-                                vm.friends.push(ros)
-                            }
-                        }
-                    },
-                })
+                console.log('[Leo]onOpened:连接成功 =>', message)
                 vm.$emit('onOpened', message)
+                //region 获取环信好友列表
+                // im.getRoster({
+                //     success: function (roster) {
+                //         console.log('[Leo]环信好友列表', roster)
+                //         //获取好友列表，并进行好友列表渲染，roster格式为：
+                //         // [
+                //         //     {
+                //         //         jid:'asemoemo#chatdemoui_test1@easemob.com',
+                //         //         name:'test1',
+                //         //         subscription: 'both'
+                //         //     }
+                //         // ]
+                //         for (var i = 0, l = roster.length; i < l; i++) {
+                //             var ros = roster[i];
+                //             //ros.subscription值为both/to为要显示的联系人，此处与APP需保持一致，才能保证两个客户端登录后的好友列表一致
+                //             if (ros.subscription === 'both' || ros.subscription === 'to') {
+                //                 ros.noread = 0
+                //                 vm.friends.push(ros)
+                //             }
+                //         }
+                //     },
+                // })
+                //endregion
             },
             /**
              * 连接关闭回调
              * @param message
              */
             onClosed: function (message) {
-                console.log('[onClosed]连接关闭 =>', message)
+                console.log('[Leo]onClosed:连接关闭 =>', message)
             },
             /**
              * 收到文本消息
              * @param message
              */
             onTextMessage: function (message) {
-                console.log('[onTextMessage]收到文本消息 =>', message)
+                console.log('[Leo]onTextMessage:收到文本消息 =>', message)
                 vm.$emit('receiveMsg', {msg: message, type: 'txt'})
             },
             /**
@@ -83,7 +87,7 @@ export default {
              * @param message
              */
             onEmojiMessage: function (message) {
-                console.log('[onEmojiMessage]收到表情消息 =>', message)
+                console.log('[Leo]onEmojiMessage:收到表情消息 =>', message)
                 vm.$emit('receiveMsg', {msg: message, type: 'emoji'})
             },
             /**
@@ -91,7 +95,7 @@ export default {
              * @param message
              */
             onPictureMessage: function (message) {
-                console.log('[onPictureMessage]收到图片消息 =>', message)
+                console.log('[Leo]onPictureMessage:收到图片消息 =>', message)
                 vm.$emit('receiveMsg', {msg: message, type: 'img'})
             },
             /**
@@ -99,14 +103,14 @@ export default {
              * @param message
              */
             onCmdMessage: function (message) {
-                console.log('[onCmdMessage]收到命令消息 =>', message)
+                console.log('[Leo]onCmdMessage:收到命令消息 =>', message)
             },
             /**
              * 收到音频消息
              * @param message
              */
             onAudioMessage: function (message) {
-                console.log('[onAudioMessage]收到音频消息 =>', message)
+                console.log('[Leo]onAudioMessage:收到音频消息 =>', message)
                 vm.$emit('receiveMsg', {msg: message, type: 'audio'})
             },
             /**
@@ -114,7 +118,7 @@ export default {
              * @param message
              */
             onLocationMessage: function (message) {
-                console.log('[onLocationMessage]收到位置消息 =>', message)
+                console.log('[Leo]onLocationMessage:收到位置消息 =>', message)
                 vm.$emit('receiveMsg', {msg: message, type: 'img'})
             },
             /**
@@ -122,7 +126,7 @@ export default {
              * @param message
              */
             onFileMessage: function (message) {
-                console.log('[onFileMessage]收到文件消息 =>', message)
+                console.log('[Leo]onFileMessage收到文件消息 =>', message)
                 // evenBus.$emit('receiveMsg', {msg: message, type: 'img'})
             },
             /**
@@ -130,7 +134,7 @@ export default {
              * @param message
              */
             onVideoMessage: function (message) {
-                console.log('[onVideoMessage]收到视频消息 =>', message)
+                console.log('[Leo]onVideoMessage:收到视频消息 =>', message)
                 var node = document.getElementById('privateVideo');
                 var option = {
                     url: message.url,
@@ -142,7 +146,7 @@ export default {
                         node.src = objectURL;
                     },
                     onFileDownloadError: function () {
-                        console.log('File down load error.')
+                        console[console.error ? 'error' : 'log']('File down load error.')
                     }
                 };
                 WebIM.utils.download.call(IM, option);
@@ -153,7 +157,7 @@ export default {
              * @param message
              */
             onPresence: function (message) {
-                console.log('[onPresence]“广播”或“发布-订阅”消息 =>', message)
+                console.log('[Leo]onPresence:“广播”或“发布-订阅”消息 =>', message)
 
                 //（发送者希望订阅接收者的出席信息），即别人申请加你为好友
                 if (e.type === 'subscribe') {
@@ -189,27 +193,27 @@ export default {
              * @param message
              */
             onRoster: function (message) {
-                console.log('[onRoster]好友申请 =>', message)
+                console.log('[Leo]onRoster:好友申请 =>', message)
             },
             /**
              * 处理群组邀请
              * @param message
              */
             onInviteMessage: function (message) {
-                console.log('[onInviteMessage]群组邀请 =>', message)
+                console.log('[Leo]onInviteMessage:群组邀请 =>', message)
             },
             /**
              * 本机网络连接成功
              */
             onOnline: function () {
-                console.log('[onOnline] => 本机网络连接成功')
+                console.log('[Leo]onOnline => 本机网络连接成功')
                 vm.$emit('onOnline')
             },
             /**
              * 本机网络掉线
              */
             onOffline: function () {
-                console.log('[onOffline] => 本机网络掉线')
+                console.log('[Leo]onOffline => 本机网络掉线')
                 vm.$emit('onOffline')
             },
             /**
@@ -217,7 +221,7 @@ export default {
              * @param message
              */
             onError: function (message) {
-                console.error('回调失败 => ', message)
+                console.error('[Leo]回调失败 => ', message)
                 var text = '';
 
                 switch (message.type) {
@@ -278,10 +282,10 @@ export default {
                     } else {
                         if (text == 'logout' || text == 'WEBIM_CONNCTION_SERVER_ERROR  type=8') {
                             text = vm.lan.logoutSuc;
-                            console.log('[Leo] =>', text)
+                            console.log('[Leo]logout =>', text)
                             Vue.$router.push({path: '/login'})
                         } else {
-                            console.error('[onError]=>', text)
+                            console.error('[Leo]onError =>', text)
                         }
                     }
                 }
@@ -292,42 +296,42 @@ export default {
              * @param list
              */
             onBlacklistUpdate: function (list) {
-                console.log('[onBlacklistUpdate]黑名单变动 =>', list);
+                console.log('[Leo]onBlacklistUpdate:黑名单变动 =>', list);
             },
             /**
              * 收到消息送达客户端回执
              * @param message
              */
             onReceivedMessage: function (message) {
-                console.log('[onReceivedMessage]收到消息送达客户端回执 =>', message)
+                console.log('[Leo]onReceivedMessage:收到消息送达客户端回执 =>', message)
             },
             /**
              * 收到消息送达服务器回执
              * @param message
              */
             onDeliveredMessage: function (message) {
-                console.log('[onDeliveredMessage]收到消息送达服务器回执 =>', message)
+                console.log('[Leo]onDeliveredMessage:收到消息送达服务器回执 =>', message)
             },
             /**
              * 收到消息已读回执
              * @param message
              */
             onReadMessage: function (message) {
-                console.log('[onReadMessage]收到消息已读回执 =>', message)
+                console.log('[Leo]onReadMessage:收到消息已读回执 =>', message)
             },
             /**
              * 创建群组成功回执（需调用createGroupNew）
              * @param message
              */
             onCreateGroup: function (message) {
-                console.log('[onCreateGroup]创建群组成功回执 =>', message)
+                console.log('[Leo]onCreateGroup:创建群组成功回执 =>', message)
             },
             /**
              * 如果用户在A群组被禁言，在A群发消息会走这个回调并且消息不会传递给群其它成员
              * @param message
              */
             onMutedMessage: function (message) {
-                console.log('[onMutedMessage]禁言 =>', message)
+                console.log('[Leo]onMutedMessage:禁言 =>', message)
             }
         });
 

@@ -93,8 +93,8 @@
         },
         watch: {
             chatMsg(val, oldVal) {
-                this.$nextTick(()=>{
-                    console.log( this.$refs.list.scrollHeight)
+                this.$nextTick(() => {
+                    console.log(this.$refs.list.scrollHeight)
                     this.$refs.main.scrollTop = this.$refs.list.scrollHeight
                 })
             }
@@ -181,7 +181,7 @@
                 var emoji = event.target.dataset.emoji
                 var msglen = that.userMessage.length - 1
                 if (emoji && emoji != '[del]') {
-                    var str = that.userMessage + emoji
+                    var str = that.inputMessage + emoji
                 } else if (emoji == '[del]') {
                     var start = that.userMessage.lastIndexOf('[')
                     var end = that.userMessage.lastIndexOf(']')
@@ -192,8 +192,8 @@
                         var str = that.userMessage.slice(0, msglen)
                     }
                 }
-                this.userMessage = str
-                this.inputMessage = str
+                that.userMessage = str
+                that.inputMessage = str
             },
             //endregion
             //region 图片

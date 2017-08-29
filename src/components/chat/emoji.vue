@@ -5,7 +5,7 @@
 * Created with JetBrains WebStorm.
 -->
 <template lang="pug">
-    img(:src="'/static/images/faces/' + data")
+    img(:src="'./static/images/faces/' + data")
 </template>
 
 <script>

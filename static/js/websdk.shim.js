@@ -4,13 +4,15 @@
     var _im = window.WebIM,
         _c = _im.connection,
         _m = _im.message,
-        _e = function() {},
+        _e = function () {
+        },
         https = location.protocol === 'https:';
 
-    _im.Helper = _im.utils;;
+    _im.Helper = _im.utils;
     _im.Emoji = _im.EMOTIONS = {
-        path: 'static/images/faces/'
-        , map: {
+        path: './static/images/faces/',
+        map: {
+            '[del]': 'del.png',
             '[):]': 'ee_1.png',
             '[:D]': 'ee_2.png',
             '[;)]': 'ee_3.png',
@@ -45,30 +47,89 @@
             '[(k)]': 'ee_32.png',
             '[(F)]': 'ee_33.png',
             '[(W)]': 'ee_34.png',
-            '[(D)]': 'ee_35.png'
+            '[(D)]': 'ee_35.png',
         }
     };
+
+    _im.EmojiObj = {
+        path: './static/images/faces/',
+        map1: {
+            '[):]': 'ee_1.png',
+            '[:D]': 'ee_2.png',
+            '[;)]': 'ee_3.png',
+            '[:-o]': 'ee_4.png',
+            '[:p]': 'ee_5.png',
+            '[(H)]': 'ee_6.png',
+            '[:@]': 'ee_7.png'
+        },
+        map2: {
+            '[:s]': 'ee_8.png',
+            '[:$]': 'ee_9.png',
+            '[:(]': 'ee_10.png',
+            '[:\'(]': 'ee_11.png',
+            '[:|]': 'ee_12.png',
+            '[(a)]': 'ee_13.png',
+            '[8o|]': 'ee_14.png'
+        },
+        map3: {
+            '[8-|]': 'ee_15.png',
+            '[+o(]': 'ee_16.png',
+            '[<o)]': 'ee_17.png',
+            '[|-)]': 'ee_18.png',
+            '[*-)]': 'ee_19.png',
+            '[:-#]': 'ee_20.png',
+            '[del]': 'del.png'
+        },
+        map4: {
+            '[:-*]': 'ee_21.png',
+            '[^o)]': 'ee_22.png',
+            '[8-)]': 'ee_23.png',
+            '[(|)]': 'ee_24.png',
+            '[(u)]': 'ee_25.png',
+            '[(S)]': 'ee_26.png',
+            '[(*)]': 'ee_27.png'
+        },
+        map5: {
+            '[(#)]': 'ee_28.png',
+            '[(R)]': 'ee_29.png',
+            '[({)]': 'ee_30.png',
+            '[(})]': 'ee_31.png',
+            '[(k)]': 'ee_32.png',
+            '[(F)]': 'ee_33.png',
+            '[(D)]': 'ee_34.png'
+        },
+        map6: {
+            '[:\'(]': 'ee_11.png',
+            '[:|]': 'ee_12.png',
+            '[(a)]': 'ee_13.png',
+            '[8o|]': 'ee_14.png',
+            '[(D)]': 'ee_35.png',
+            '[:s]': 'ee_8.png',
+            '[del]': 'del.png'
+        }
+    }
+
     _im.Helper.EmotionPicData = (function () {
         var ems = {};
 
-        for ( var o in _im.EMOTIONS.map ) {
-            if ( _im.EMOTIONS.map.hasOwnProperty(o) ) {
+        for (var o in _im.EMOTIONS.map) {
+            if (_im.EMOTIONS.map.hasOwnProperty(o)) {
                 ems[o] = _im.EMOTIONS.map[o];
             }
         }
         return ems;
     }());
 
-    _c.prototype.init = function ( options ) {
-        for ( var o in options ) {
-            if ( options.hasOwnProperty(o) ) {
+    _c.prototype.init = function (options) {
+        for (var o in options) {
+            if (options.hasOwnProperty(o)) {
                 this[o] = options[o];
             }
         }
         this.listen(options);
     };
 
-    var _send = function ( type, options ) {
+    var _send = function (type, options) {
         var msg = new _m(type);
 
         options.id && (msg.id = options.id);
@@ -76,22 +137,22 @@
         options.type === 'groupchat' && msg.setGroup(options.type);
         this.send(msg.body);
     };
-    _c.prototype.sendTextMessage = function ( options ) {
+    _c.prototype.sendTextMessage = function (options) {
         _send.call(this, 'txt', options);
     };
-    _c.prototype.sendPicture = function ( options ) {
+    _c.prototype.sendPicture = function (options) {
         _send.call(this, 'img', options);
     };
-    _c.prototype.sendAudio = function ( options ) {
+    _c.prototype.sendAudio = function (options) {
         _send.call(this, 'audio', options);
     };
-    _c.prototype.sendFile = function ( options ) {
+    _c.prototype.sendFile = function (options) {
         _send.call(this, 'file', options);
     };
-    _c.prototype.sendLocationMessage = function ( options ) {
+    _c.prototype.sendLocationMessage = function (options) {
         _send.call(this, 'location', options);
     };
-    _c.prototype.sendCmdMessage = function ( options ) {
+    _c.prototype.sendCmdMessage = function (options) {
         _send.call(this, 'cmd', options);
     };
 
@@ -109,7 +170,7 @@
              * @param {String}
              *            input The string to encode in base64.
              */
-            encode : function ( input ) {
+            encode: function (input) {
                 var output = "";
                 var chr1, chr2, chr3;
                 var enc1, enc2, enc3, enc4;
@@ -125,20 +186,20 @@
                     enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
                     enc4 = chr3 & 63;
 
-                    if ( isNaN(chr2) ) {
+                    if (isNaN(chr2)) {
                         enc3 = enc4 = 64;
-                    } else if ( isNaN(chr3) ) {
+                    } else if (isNaN(chr3)) {
                         enc4 = 64;
                     }
 
                     output = output + keyStr.charAt(enc1) + keyStr.charAt(enc2)
-                            + keyStr.charAt(enc3) + keyStr.charAt(enc4);
-                } while ( i < input.length );
+                        + keyStr.charAt(enc3) + keyStr.charAt(enc4);
+                } while (i < input.length);
 
                 return output;
             },
 
-            byteEncode : function ( bytes ) {
+            byteEncode: function (bytes) {
                 var output = "";
                 var chr1, chr2, chr3;
                 var enc1, enc2, enc3, enc4;
@@ -154,15 +215,15 @@
                     enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
                     enc4 = chr3 & 63;
 
-                    if ( isNaN(chr2) ) {
+                    if (isNaN(chr2)) {
                         enc3 = enc4 = 64;
-                    } else if ( isNaN(chr3) ) {
+                    } else if (isNaN(chr3)) {
                         enc4 = 64;
                     }
 
                     output = output + keyStr.charAt(enc1) + keyStr.charAt(enc2)
-                            + keyStr.charAt(enc3) + keyStr.charAt(enc4);
-                } while ( i < bytes.length );
+                        + keyStr.charAt(enc3) + keyStr.charAt(enc4);
+                } while (i < bytes.length);
 
                 return output;
             },
@@ -173,7 +234,7 @@
              * @param {String}
              *            input The string to decode.
              */
-            decode : function ( input ) {
+            decode: function (input) {
                 var output = "";
                 var chr1, chr2, chr3;
                 var enc1, enc2, enc3, enc4;
@@ -194,13 +255,13 @@
 
                     output = output + String.fromCharCode(chr1);
 
-                    if ( enc3 != 64 ) {
+                    if (enc3 != 64) {
                         output = output + String.fromCharCode(chr2);
                     }
-                    if ( enc4 != 64 ) {
+                    if (enc4 != 64) {
                         output = output + String.fromCharCode(chr3);
                     }
-                } while ( i < input.length );
+                } while (i < input.length);
 
                 return output;
             }
@@ -214,13 +275,13 @@
     window.Easemob.im.Connection = _c;
     window.Easemob.im.Utils = _im.utils;
     window.Easemob.im.Utils.parseEmotions = _im.utils.parseEmoji;
-    window.Easemob.im.Utils.parseTextMessage = function ( message, faces ) {
+    window.Easemob.im.Utils.parseTextMessage = function (message, faces) {
         var faces = _im.Emoji;
 
-        if ( typeof message !== 'string' ) {
+        if (typeof message !== 'string') {
             return;
         }
-        if ( Object.prototype.toString.call(faces) !== '[object Object]' ) {
+        if (Object.prototype.toString.call(faces) !== '[object Object]') {
             return {
                 isemotion: false
                 , body: [
@@ -237,7 +298,7 @@
         var expr = /\[[^[\]]{2,3}\]/mg;
         var emotions = receiveMsg.match(expr);
 
-        if ( !emotions || emotions.length < 1 ){
+        if (!emotions || emotions.length < 1) {
             return {
                 isemotion: false
                 , body: [
@@ -249,17 +310,17 @@
             };
         }
         var isemotion = false;
-        for ( var i = 0; i < emotions.length; i++ ) {
+        for (var i = 0; i < emotions.length; i++) {
             var tmsg = receiveMsg.substring(0, receiveMsg.indexOf(emotions[i])),
                 existEmotion = Easemob.im.EMOTIONS.map[emotions[i]];
 
-            if ( tmsg ) {
+            if (tmsg) {
                 emessage.push({
                     type: "txt"
                     , data: tmsg
                 });
             }
-            if ( !existEmotion ) {
+            if (!existEmotion) {
                 emessage.push({
                     type: "txt"
                     , data: emotions[i]
@@ -268,7 +329,7 @@
             }
             var emotion = Easemob.im.EMOTIONS.map ? Easemob.im.EMOTIONS.path + existEmotion : null;
 
-            if ( emotion ) {
+            if (emotion) {
                 isemotion = true;
                 emessage.push({
                     type: 'emotion'
@@ -283,13 +344,13 @@
             var restMsgIndex = receiveMsg.indexOf(emotions[i]) + emotions[i].length;
             receiveMsg = receiveMsg.substring(restMsgIndex);
         }
-        if ( receiveMsg ) {
+        if (receiveMsg) {
             emessage.push({
                 type: 'txt'
                 , data: receiveMsg
             });
         }
-        if ( isemotion ) {
+        if (isemotion) {
             return {
                 isemotion: isemotion
                 , body: emessage

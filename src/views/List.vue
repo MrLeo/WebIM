@@ -9,7 +9,7 @@
                             mt-cell-swipe(:title="value.user_name", :right="[{content: '&nbsp;', style: {background: '#FFF'}}, {content: '已读', style: {background: 'lightgray', color: '#fff'}, handler: () => {return setReadStatus(value)}}]")
                                 span.noread(v-if="!!value.noread") {{value.noread}}
                                 img(slot="icon", :src="value.avatar || require('../assets/img/header.jpg')", width="24", height="24")
-        transition(:name="transitionName")
+        transition(name="slide")
             router-view(class="child-view")
 </template>
 
@@ -33,7 +33,6 @@
             token: '',
             title: '',
             allLoaded: false,//底部数据全部获取完毕
-            transitionName: 'slide',
             popupVisible: false,
             friendName: '',
             doctors: {}
@@ -271,19 +270,5 @@
         text-align: center;
         line-height: 20px;
         font-size: 12px;
-    }
-
-    .slide-enter, .slide-leave-to {
-        -webkit-transform: translate(100%, 0);
-        transform: translate(100%, 0);
-    }
-
-    .slide-enter-active, .slide-leave-active {
-        transition: all .5s cubic-bezier(.55, 0, .1, 1);
-    }
-
-    .slide-enter-to, .slide-leave {
-        -webkit-transform: translate(0, 0);
-        transform: translate(0, 0);
     }
 </style>

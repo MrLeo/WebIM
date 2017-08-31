@@ -23,4 +23,18 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+
+    .slide-enter, .slide-leave-to {
+        -webkit-transform: translate(100%, 0);
+        transform: translate(100%, 0);
+    }
+
+    .slide-enter-active, .slide-leave-active {
+        transition: all .5s cubic-bezier(.55, 0, .1, 1);
+    }
+
+    .slide-enter-to, .slide-leave {
+        -webkit-transform: translate(0, 0);
+        transform: translate(0, 0);
+    }
 </style>

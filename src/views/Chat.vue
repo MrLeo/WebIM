@@ -29,10 +29,12 @@
             //-按钮区
             .other_func
                 .open_emoji(@click="openEmoji",title="发送表情")
-                    img(src="../assets/images/Emoji.png")
+                    img(src="../assets/images/Emoji.png",style="height:18px;")
                 .send_image(title="发送图片")
-                    img(src="../assets/images/iconImage@2x.png", style="height: 18px;")
+                    img(src="../assets/images/iconImage@2x.png",style="height: 18px;")
                     input.uploader(type="file",@change="sendImage",ref="uploader")
+                .custom_message(title="自定义消息")
+                    img(src="../assets/images/iconFile@2x.png",style="height:18px;")
             .emoji_item(:class="show",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
         //-语音消息：录音弹窗
@@ -41,6 +43,8 @@
                 .desc {{RecordDesc[recordStatus]}}
                 .dot(@touchstart="handleRecording",@touchmove="handleRecordingMove",@touchend="handleRecordingCancel")
                     img.icon-mic(src="../assets/images/mic@2x.png")
+        transition(name="slide")
+            router-view(class="child-view")
 </template>
 
 <script>
@@ -128,43 +132,13 @@
                 this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
             },
             sendMessage() {
-                if (!this.inputMessage.trim()) return;
-                let that = this
-                let id = this.$$im.getUniqueId();
-                let message = new WebIM.message('txt', id);
-                message.set({
-                    msg: this.inputMessage,
-                    to: this.$$vm.currDoc['hxUser'],
-                    roomType: false,
-                    success: function (id, serverMsgId) {
-                        //console.log('[Leo]=>success')
-                    }
-                });
-                message.body.chatType = 'singleChat';
-                this.$$im.send(message.body);
-                if (message) {
-                    let value = WebIM.parseEmoji(message.value.replace(/\n/mg, ''))
-                    let time = WebIM.time()
-                    let msgData = {
-                        info: {
-                            to: message.body.to
-                        },
-                        username: this.$$vm.user.hxUser,
-                        yourname: message.body.to,
-                        msg: {
-                            type: message.type,
-                            data: value
-                        },
-                        style: 'self',
-                        time: time,
-                        mid: message.id
-                    }
-                    this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']].push(msgData)
+                if (!this.inputMessage.trim()) return
 
-                    that.userMessage = ''
-                    that.inputMessage = ''
-                    that.cancelEmoji()
-                }
+                this.$sendMessage(inputMessage)
+
+                this.userMessage = ''
+                this.inputMessage = ''
+                this.cancelEmoji()
             },
             focus() {
                 this.cancelEmoji()
@@ -220,18 +194,18 @@
                     let option = {
                         apiUrl: WebIM.config.apiURL,
                         file: file,
-                        to: that.$route.query.name,// 接收消息对象
+                        to: that.$$vm.currDoc.hxUser,// 接收消息对象
                         roomType: false,
                         chatType: 'singleChat',
-                        onFileUploadError: function (error) {      // 消息上传失败
+                        onFileUploadError: function (error) {
                             console.log('[Leo]onFileUploadError:图片上传失败=>', error);
                         },
-                        onFileUploadComplete: function (data) {   // 消息上传成功
+                        onFileUploadComplete: function (data) {
                             console.log('[Leo]onFileUploadComplete:图片上传成功=>', data);
                             let url = ((location.protocol != 'https:' && WebIM.config.isHttpDNS) ? (this.$$vm.apiUrl + data.uri.substr(data.uri.indexOf("/", 9))) : data.uri) + '/' + data.entities[0].uuid;
                             that.$refs.uploader.value = null;
                             let time = WebIM.time()
-                            console.log('[Leo]url=>', url)
+                            console.log('[Leo]图片url=>', url)
                             var msgData = {
                                 info: {
                                     from: that.$$vm.user.hxUser,

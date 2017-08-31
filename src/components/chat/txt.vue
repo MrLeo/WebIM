@@ -5,7 +5,7 @@
 * Created with JetBrains WebStorm.
 -->
 <template lang="pug">
-    span {{ data }}
+    span {{data}}
 </template>
 
 <script>

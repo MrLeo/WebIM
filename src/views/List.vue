@@ -158,15 +158,17 @@
              * @param type
              */
             receiveMessage(msg, type) {
-                let that = this
                 if (msg.from == this.$$vm.user.hxUser || msg.to == this.$$vm.user.hxUser) {
+                    var value = msg.data
                     if (type == 'txt') {
-                        var value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
-                    } else if (type == 'emoji') {
-                        var value = msg.data
-                    } else {
-                        var value = msg.data
+                        value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
                     }
+
+                    if (msg.ext['extension']) {
+                        type = msg.ext['extension']
+                        value = `<h3>${msg.ext[`${msg.ext['extension']}_title`]}</h3><p>${msg.ext[`${msg.ext['extension']}_content`]}</p>`
+                    }
+
                     let time = WebIM.time()
                     let msgData = {
                         info: {
@@ -176,9 +178,10 @@
                         username: '',
                         yourname: msg.from,
                         msg: {
-                            type: type,
+                            type: type || 'txt',
                             data: value,
-                            url: msg.url
+                            url: msg.url,
+                            ext: msg.ext
                         },
                         style: '',
                         time: time,

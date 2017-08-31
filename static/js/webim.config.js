@@ -143,7 +143,7 @@ WebIM.parseEmoji = function (msg) {
                 objList.push(obj)
             }
         }
-        console.log('[parseEmoji]', objList)
+        console.log('[Leo]parseEmoji', objList)
         return objList;
     }
 }

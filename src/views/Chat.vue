@@ -18,8 +18,10 @@
                             .msg
                                 template(v-if="item.msg.type == 'img' || item.msg.type == 'audio' || item.msg.type == 'video'")
                                     component(:is="'v-'+item.msg.type", :data="item.msg.data || item.msg.url")
-                                template(v-if="item.msg.type == 'txt' || item.msg.type == 'emoji'")
+                                template(v-else-if="item.msg.type == 'txt' || item.msg.type == 'emoji'")
                                     component(v-for="(item,index) in item.msg.data",:key="index",:is="'v-'+item.type", :data="item.data")
+                                template(v-else)
+                                    section(:class="item.msg.type",v-html="item.msg.data")
         //-底部按钮
         .room_bar
             .form(title="文本框")
@@ -33,7 +35,7 @@
                 .send_image(title="发送图片")
                     img(src="../assets/images/iconImage@2x.png",style="height: 18px;")
                     input.uploader(type="file",@change="sendImage",ref="uploader")
-                .custom_message(title="自定义消息")
+                .custom_message(title="自定义消息",@click="sendCustomMessage")
                     img(src="../assets/images/iconFile@2x.png",style="height:18px;")
             .emoji_item(:class="show",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
@@ -43,7 +45,7 @@
                 .desc {{RecordDesc[recordStatus]}}
                 .dot(@touchstart="handleRecording",@touchmove="handleRecordingMove",@touchend="handleRecordingCancel")
                     img.icon-mic(src="../assets/images/mic@2x.png")
-        transition(name="slide")
+        //-transition(name="slide")
             router-view(class="child-view")
 </template>
 
@@ -98,7 +100,6 @@
         watch: {
             chatMsg(val, oldVal) {
                 this.$nextTick(() => {
-                    console.log(this.$refs.list.scrollHeight)
                     this.$refs.main.scrollTop = this.$refs.list.scrollHeight
                 })
             }
@@ -132,13 +133,24 @@
                 this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
             },
             sendMessage() {
-                if (!this.inputMessage.trim()) return
-
-                this.$sendMessage(inputMessage)
+                if (!this.inputMessage.trim()) {
+                    return;
+                }
+                this.$sendTxtMessage(this.inputMessage)
 
                 this.userMessage = ''
                 this.inputMessage = ''
                 this.cancelEmoji()
+            },
+            sendCustomMessage() {
+                //TODO:获取知识库列表
+                //TODO:知识库详情
+                this.$sendCustomMessage({
+                    extension: "knowledge",
+                    knowledge_content: "如何服用降压药，这些常识了解吗？",
+                    knowledge_id: "24ea05b93e5b41e795a195047909a4c2",
+                    knowledge_title: "服用降压药的必备常识"
+                })
             },
             focus() {
                 this.cancelEmoji()
@@ -356,7 +368,7 @@
         max-width: calc(85% - 40px);
         /// min-height:(12 + 5 * 2) px;
         font-size: 12px;
-        overflow: hidden;
+        /*overflow: hidden;*/
         text-align: left;
         word-break: break-all;
         background-color: #EDEDED;

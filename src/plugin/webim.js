@@ -335,8 +335,8 @@ export default {
             }
         }
 
-        function sendCustomMessage(ext) {
-            var message = imSendTxt('', ext)
+        function sendCustomMessage(inputMessage, ext) {
+            var message = imSendTxt(inputMessage, ext)
             if (message) {
                 let time = WebIM.time()
                 let msgData = {
@@ -347,7 +347,7 @@ export default {
                     yourname: message.body.to,
                     msg: {
                         type: ext['extension'] || message.type,
-                        data: `<h3>${ext[`${ext['extension']}_title`]}</h3><p>${ext[`${ext['extension']}_content`]}</p>`,
+                        data: inputMessage,
                         ext
                     },
                     style: 'self',

@@ -21,7 +21,9 @@
                                 template(v-else-if="item.msg.type == 'txt' || item.msg.type == 'emoji'")
                                     component(v-for="(item,index) in item.msg.data",:key="index",:is="'v-'+item.type", :data="item.data")
                                 template(v-else)
-                                    section(:class="item.msg.type",v-html="item.msg.data")
+                                    section(:class="item.msg.type",@click="toDetail(item.msg)")
+                                        h3 {{item.msg.ext[item.msg.ext.extension+'_title']}}
+                                        p {{item.msg.ext[item.msg.ext.extension+'_content']}}
         //-底部按钮
         .room_bar
             .form(title="文本框")
@@ -35,8 +37,8 @@
                 .send_image(title="发送图片")
                     img(src="../assets/images/iconImage@2x.png",style="height: 18px;")
                     input.uploader(type="file",@change="sendImage",ref="uploader")
-                .custom_message(title="自定义消息",@click="sendCustomMessage")
-                    img(src="../assets/images/iconFile@2x.png",style="height:18px;")
+                .custom_message(title="自定义消息",@click="sendCustomMessage('knowledge')") 知识库&nbsp;
+                .custom_message(title="自定义消息",@click="sendCustomMessage('medical_records')") 病例&nbsp;
             .emoji_item(:class="show",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
         //-语音消息：录音弹窗
@@ -142,15 +144,30 @@
                 this.inputMessage = ''
                 this.cancelEmoji()
             },
-            sendCustomMessage() {
+            sendCustomMessage(extension, item) {
                 //TODO:获取知识库列表
                 //TODO:知识库详情
-                this.$sendCustomMessage({
-                    extension: "knowledge",
-                    knowledge_content: "如何服用降压药，这些常识了解吗？",
-                    knowledge_id: "24ea05b93e5b41e795a195047909a4c2",
-                    knowledge_title: "服用降压药的必备常识"
-                })
+                let msg = '', ext = {extension}
+                switch (extension) {
+                    case 'knowledge':
+                        msg = '[知识库消息]'
+                        break
+                    case 'medical_records':
+                        msg = '[病例]'
+                        break
+                }
+
+                ext[`${extension}_id`] = '24ea05b93e5b41e795a195047909a4c2'
+                ext[`${extension}_title`] = '服用降压药的必备常识'
+                ext[`${extension}_content`] = '如何服用降压药，这些常识了解吗？'
+
+                this.$sendCustomMessage(msg, ext)
+            },
+            toDetail(msg) {
+                if (msg.ext.extension === 'knowledge')
+                    window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext + '_id']}`
+                if (msg.ext.extension === 'knowledge')
+                    window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext + '_id']}`
             },
             focus() {
                 this.cancelEmoji()

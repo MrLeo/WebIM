@@ -1,6 +1,6 @@
-# im
+# webim
 
-> [IM](https://github.com/MrLeo/webim)
+> A Vue.js project
 
 ## Build Setup
 

@@ -95,13 +95,12 @@
     created() {
       this.hxUser = this.$route.query.hxUser || uri.getQueryString('hxUser')
 //      let msg = JSON.parse(window.localStorage.getItem(this.hxUser)) || []
-//      console.log('this.$$vm.chatMsg[this.hxUser] =>', this.$$vm.chatMsg[this.hxUser])
 //      if (this.$$vm.chatMsg[this.hxUser]) {
 //        this.$$vm.chatMsg[this.hxUser].forEach(item => {
 //          msg.push(item)
 //        })
 //      }
-//      this.$$vm.$set(this.$$vm.chatMsg, this.hxUser, msg)
+      this.$$vm.$set(this.$$vm.chatMsg, this.hxUser, msg)
     },
     mounted() {
       this.$nextTick(() => {

@@ -59,6 +59,7 @@
     import vImg from '../components/chat/img.vue'
     import vVideo from '../components/chat/video.vue'
     import vAudio from '../components/chat/audio.vue'
+    import uri from '../utils/url'
 
     export default {
         name: 'Chat',
@@ -69,6 +70,7 @@
             vTxt, vEmoji, vImg, vVideo, vAudio
         },
         data: () => ({
+            hxUser: '',
             username: '',
             allLoaded: false,//底部数据全部获取完毕
             Emoji: WebIM.Emoji,
@@ -92,11 +94,12 @@
             inputMessage: []
         }),
         created() {
-            this.username = this.$$vm.currDoc['user_name'] || ''
-            if (!this.$$vm.chatMsg.hasOwnProperty(this.$$vm.currDoc['hxUser'])) this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']] = []
-            this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']])
         },
         mounted() {
+            this.hxUser = this.$route.query.hxUser || uri.getQueryString('hxUser')
+            this.username = this.$$vm.doctors[this.hxUser]['user_name'] || ''
+            if (!this.$$vm.chatMsg.hasOwnProperty(this.hxUser)) this.$$vm.chatMsg[this.hxUser] = []
+            this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.hxUser])
             this.init()
         },
         watch: {
@@ -113,8 +116,8 @@
                         item.avatar = this.$$vm.user.photo
                         item.username = this.$$vm.user.name
                     } else {
-                        item.avatar = this.$$vm.currDoc.avatar
-                        item.username = this.$$vm.currDoc['user_name']
+                        item.avatar = this.$$vm.doctors[this.hxUser].avatar
+                        item.username = this.$$vm.doctors[this.hxUser]['user_name']
                     }
                     if (!item.avatar) {
                         item.avatar = require('../assets/images/number.png')
@@ -126,13 +129,13 @@
         methods: {
             init() {
                 this.$refs.main.scrollTop = this.$refs.list.scrollHeight
-                this.$$vm.$watch(`chatMsg.${this.$$vm.currDoc['hxUser']}`, (val, oldVal) => {
+                this.$$vm.$watch(`chatMsg.${this.hxUser}`, (val, oldVal) => {
                     console.log('[Leo]chatMsg change=>', val)
                     this.$set(this, 'chatMsg', val)
-                    this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
+                    this.$$vm.$emit('readed', this.hxUser)
                     //document.querySelectorAll('.page-current main')[0].scrollTop=document.querySelectorAll('.page-current .list')[0].scrollHeight
                 })
-                this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
+                this.$$vm.$emit('readed', this.hxUser)
             },
             sendMessage() {
                 if (!this.inputMessage.trim()) {
@@ -223,7 +226,7 @@
                     let option = {
                         apiUrl: WebIM.config.apiURL,
                         file: file,
-                        to: that.$$vm.currDoc.hxUser,// 接收消息对象
+                        to: this.hxUser,// 接收消息对象
                         roomType: false,
                         chatType: 'singleChat',
                         onFileUploadError: function (error) {
@@ -238,10 +241,10 @@
                             var msgData = {
                                 info: {
                                     from: that.$$vm.user.hxUser,
-                                    to: that.$$vm.currDoc.hxUser,
+                                    to: that.hxUser,
                                 },
                                 username: that.$$vm.user.hxUser,
-                                yourname: that.$$vm.currDoc.hxUser,
+                                yourname: that.hxUser,
                                 msg: {
                                     type: 'img',
                                     data: url
@@ -250,7 +253,7 @@
                                 time: time,
                                 mid: 'img' + id,
                             }
-                            that.$$vm.chatMsg[that.$$vm.currDoc['hxUser']].push(msgData)
+                            that.$$vm.chatMsg[that.hxUser].push(msgData)
                         },
                         success: function () {// 消息发送成功
                             console.log('[Leo]图片发送成功');

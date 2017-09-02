@@ -38,6 +38,7 @@
             doctors: {}
         }),
         mounted() {
+            this.doctors = this.$$vm.doctors
             this.$$vm.code = uri.getQueryString('code') || this.$$vm.code
             if (process.env.NODE_ENV != 'development') {
                 if (!this.$$vm.code) {
@@ -124,6 +125,7 @@
                     res.data.data.forEach(item => {
                         item.noread = 0
                         this.$set(this.doctors, item.hxUser, item)
+                        this.$set(this.$$vm.doctors, item.hxUser, item)
                     })
                 })
             },
@@ -230,7 +232,7 @@
                 this.$$vm.currDoc = item
                 this.$router.push({
                     path: '/chat',
-                    query: {code: this.$$vm.code}
+                    query: {hxUser: item.hxUser, code: this.$$vm.code}
                 })
                 return false
             },

@@ -7,6 +7,7 @@
 <script>
     import axios from 'axios'
     import uri from './utils/url'
+    import {extensionTitle} from './utils/enum'
 
     export default {
         name: 'app',
@@ -95,6 +96,7 @@
                         item['noread'] = 0
                         this.$set(this.$$vm.doctors, item.hxUser, item)
                     })
+                    window.localStorage.setItem('docs', JSON.stringify(res.data.data))//将医生列表本地缓存，用户获取对应医生的消息历史
                 })
             },
             /**
@@ -129,14 +131,15 @@
              */
             receiveMessage(msg, type) {
                 if (msg.from == this.$$vm.user.hxUser || msg.to == this.$$vm.user.hxUser) {
-                    var value = msg.data
-                    if (type == 'txt') {
+                    var value = msg.data//默认展示的消息value
+
+                    if (type == 'txt') {//txt消息需要转Emoji图标
                         value = WebIM.parseEmoji(msg.data.replace(/\n/mg, ''))
                     }
 
-                    if (msg.ext['extension']) {
+                    if (msg.ext['extension']) {//如果消息带有扩展，则消息类型从扩展中取
                         type = msg.ext['extension']
-                        value = `<h3>${msg.ext[`${msg.ext['extension']}_title`]}</h3><p>${msg.ext[`${msg.ext['extension']}_content`]}</p>`
+                        value = extensionTitle[type]
                     }
 
                     let time = WebIM.time()
@@ -167,16 +170,14 @@
 
                     this.$$vm.doctors[msg.from]['noread'] = ~~this.$$vm.doctors[msg.from]['noread'] + 1 //设置未读消息数
 
-                    //TODO:历史消息整合
-//                    let oldMsg = JSON.parse(window.localStorage.getItem(msg.from)) || []
-//                    this.$$vm.chatMsg[msg.from].forEach(item => {
-//                        oldMsg.push(item)
-//                    })
-
                     if (!this.$$vm.chatMsg.hasOwnProperty(msg.from)) this.$$vm.chatMsg[msg.from] = []
 
                     this.$$vm.chatMsg[msg.from].push(msgData)
 
+                    //将收到的消息加入到历史消息缓存
+                    let msgHistory = JSON.parse(window.localStorage.getItem(msg.from)) || []
+                    msgHistory.push(msgData)
+                    window.localStorage.setItem(msg.from, JSON.stringify(msgHistory))
                 }
             },
         }

@@ -180,6 +180,20 @@
                     window.localStorage.setItem(msg.from, JSON.stringify(msgHistory))
                 }
             },
+            /**
+             * 获取知识库列表
+             */
+            getKnowledgeList(){
+                axios.get(`${this.$$vm.host}/api/gaorepository/gaoRepository/zhishiList`,{
+                    params:{
+                        search:'',
+                        pageNo:1,
+                        pageSize:100
+                    }
+                }).then(res=>{
+                    this.$$vm.knowledgeList = res.data
+                })
+            },
         }
     }
 </script>

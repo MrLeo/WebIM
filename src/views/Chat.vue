@@ -52,7 +52,7 @@
             //-知识库列表
             .emoji_item(:class="{showKnowledge:show.knowledge}",title="知识库列表")
                 ul
-                    li(v-for="item in knowledgeList",@click="sendCustomMessage('knowledge',item)")
+                    li(v-for="item in knowledgeList",@click="sendCustomMessage('knowledge',item)") {{item.title}}
             //-病例列表
             .emoji_item(:class="{showMdical:show['medical_records']}",title="病例列表")
                 ul
@@ -107,7 +107,8 @@
             this.$nextTick(() => {
                 this.username = this.$$vm.doctors[this.hxUser]['user_name'] || ''
                 if (!this.$$vm.chatMsg.hasOwnProperty(this.hxUser)) this.$$vm.chatMsg[this.hxUser] = []
-                this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.hxUser])
+                this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.hxUser])//历史消息
+                this.$set(this, 'knowledgeList', this.$$vm.knowledgeList)//知识库
                 this.init()
             })
         },
@@ -165,14 +166,14 @@
                 this.cancelEmoji()
             },
             sendCustomMessage(extension, item) {
-                //TODO:获取知识库列表
-                //TODO:知识库详情
                 let ext = {extension}
                 let msg = extensionTitle[extension]
 
-                ext[`${extension}_id`] = '24ea05b93e5b41e795a195047909a4c2'
-                ext[`${extension}_title`] = '服用降压药的必备常识'
-                ext[`${extension}_content`] = '如何服用降压药，这些常识了解吗？'
+                if(extension === 'knowledge'){
+                    ext[`${extension}_id`] = item.id
+                    ext[`${extension}_title`] = item.title
+                    ext[`${extension}_content`] = item.introduce
+                }
 
                 this.$sendCustomMessage(msg, ext)
             },

@@ -18,6 +18,7 @@ export default {
                 },
                 doctors: {},
                 chatMsg: {},
+                knowledgeList:[],
                 errorType: -1
             },
             created() {

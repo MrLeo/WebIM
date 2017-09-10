@@ -56,10 +56,11 @@
             //-病例列表
             .emoji_item(:class="{showMdical:show['medical_records']}",title="病例列表")
                 ul
-                    li(v-for="item in medicalList",@click="sendCustomMessage('medical_records',item)")
+                    li(v-for="item in medicalList",@click="sendCustomMessage('medical_records',item)") {{item.name}}
 </template>
 
 <script>
+    import axios from 'axios'
     import {Header, Loadmore, Button} from 'mint-ui'
     import WebIM from 'WebIM'
     import vTxt from '../components/chat/txt.vue'
@@ -149,6 +150,15 @@
 //          window.localStorage.setItem(this.hxUser, JSON.stringify(this.$$vm.chatMsg[this.hxUser]))
                 })
             },
+            getPatientBliFirstList(){
+                axios.get(`${this.$$vm.host}/api/blianddoc/gaoBlianddoc/patientBliFirstList`, {params: {
+                    'user_id': userId,
+                    pageNo:1,
+                    pageSize:100
+                }}).then(res=>{
+                    this.medicalList = res.data.list
+                })
+            },
             toDetail(msg) {
                 if (msg.ext.extension === 'knowledge')
                     window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext + '_id']}`
@@ -169,8 +179,8 @@
                 let ext = {extension}
                 let msg = extensionTitle[extension]
 
+                ext[`${extension}_id`] = item.id
                 if(extension === 'knowledge'){
-                    ext[`${extension}_id`] = item.id
                     ext[`${extension}_title`] = item.title
                     ext[`${extension}_content`] = item.introduce
                 }

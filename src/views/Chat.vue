@@ -180,10 +180,16 @@
                 })
             },
             toDetail(msg) {
-                if (msg.ext.extension === 'knowledge')
-                    window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext + '_id']}`
-                if (msg.ext.extension === 'knowledge')
-                    window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext + '_id']}`
+                switch (msg.ext.extension) {
+                    case 'knowledge':
+                        window.open(`${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`)
+                        window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`
+                        break
+                    case 'medical_records':
+                        window.open(`${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`)
+                        window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`
+                        break
+                }
             },
             sendMessage() {
                 if (!this.inputMessage.trim()) {

@@ -182,11 +182,9 @@
             toDetail(msg) {
                 switch (msg.ext.extension) {
                     case 'knowledge':
-                        window.open(`${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`)
                         window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`
                         break
                     case 'medical_records':
-                        window.open(`${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`)
                         window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`
                         break
                 }
@@ -325,6 +323,7 @@
                                 mid: 'img' + id,
                             }
                             that.$$vm.chatMsg[that.hxUser].push(msgData)
+                            that.$setStorageChat(that.hxUser, that.$$vm.chatMsg[that.hxUser])//保存到历史消息缓存
                         },
                         success: function () {// 消息发送成功
                             console.log('[Leo]图片发送成功');

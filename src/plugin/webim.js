@@ -18,7 +18,7 @@ export default {
                 },
                 doctors: {},
                 chatMsg: {},
-                knowledgeList:[],
+                knowledgeList: [],
                 errorType: -1
             },
             created() {
@@ -26,10 +26,13 @@ export default {
                 let docs = JSON.parse(window.localStorage.getItem('docs') || '[]')
                 docs.forEach(item => {
                     this.$set(this.doctors, item.hxUser, JSON.parse(window.localStorage.getItem(item.hxUser) || '[]'))
+
+                    //获取历史消息
+                    let userChatHistory = getStorageChat(item.hxUser)
+                    this.$set(this.chatMsg, item.hxUser, userChatHistory)
                 })
             }
         });
-
 
         //建立连接
         var im = new WebIM.connection({
@@ -301,6 +304,11 @@ export default {
             }
         });
 
+        /**
+         * 环信发送消息
+         * @param msg
+         * @param ext
+         */
         function imSendTxt(msg, ext = {}) {
             var message = new WebIM.message('txt', im.getUniqueId());
 
@@ -319,6 +327,10 @@ export default {
             return message
         }
 
+        /**
+         * 发送文字消息
+         * @param inputMessage
+         */
         function sendTxtMessage(inputMessage) {
             var message = imSendTxt(inputMessage)
             if (message) {
@@ -338,9 +350,15 @@ export default {
                     mid: message.id
                 }
                 vm.chatMsg[_vm.$route.query['hxUser']].push(msgData)
+                setStorageChat(_vm.$route.query['hxUser'], vm.chatMsg[_vm.$route.query['hxUser']])//保存到历史消息缓存
             }
         }
 
+        /**
+         * 发送自定义消息
+         * @param inputMessage
+         * @param ext
+         */
         function sendCustomMessage(inputMessage, ext) {
             var message = imSendTxt(inputMessage, ext)
             if (message) {
@@ -361,13 +379,37 @@ export default {
                     mid: message.id
                 }
                 vm.chatMsg[_vm.$route.query['hxUser']].push(msgData)
+                setStorageChat(_vm.$route.query['hxUser'], vm.chatMsg[_vm.$route.query['hxUser']])//保存到历史消息缓存
             }
+        }
+
+        /**
+         * 获取本地历史消息
+         * @param key
+         * @returns {Array}
+         */
+        function getStorageChat(key) {
+            let data = window.localStorage.getItem(key)
+            if (!data) return []
+            return JSON.parse(data)
+        }
+
+        /**
+         * 存储历史消息
+         * @param key
+         * @param data
+         */
+        function setStorageChat(key, data) {
+            // let historyData = getStorageChat(key)
+            window.localStorage.setItem(key, JSON.stringify(data))
         }
 
         Vue.prototype.$$vm = vm;
         Vue.prototype.$$im = im;
         Vue.prototype.$sendTxtMessage = sendTxtMessage;
         Vue.prototype.$sendCustomMessage = sendCustomMessage;
+        Vue.prototype.$getStorageChat = getStorageChat;
+        Vue.prototype.$setStorageChat = setStorageChat;
     }
 }
 

@@ -178,10 +178,7 @@
 
                     this.$$vm.chatMsg[msg.from].push(msgData)
 
-                    //将收到的消息加入到历史消息缓存
-                    let msgHistory = JSON.parse(window.localStorage.getItem(msg.from)) || []
-                    msgHistory.push(msgData)
-                    window.localStorage.setItem(msg.from, JSON.stringify(msgHistory))
+                    this.$setStorageChat(msg.from, this.$$vm.chatMsg[msg.from])//将收到的消息保存到历史消息缓存
                 }
             },
             /**

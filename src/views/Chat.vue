@@ -1,11 +1,18 @@
+<!--
+* @Date: 2017/9/2  15:17
+* @Author: leo
+* http://xuebin.me/
+* Created with JetBrains WebStorm.
+-->
 <template lang="pug">
     .page.page-current
         //-顶部导航
         mt-header(fixed,:title="username")
             router-link(to="/" slot="left")
                 mt-button(icon="back") 返回
+
         //-消息列表
-        main(ref="main")
+        main(ref="main",:style="{bottom:bottomGetter}")
             mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
                 .list(ref="list")
                     .message(v-for="item in chatListGetter",:class="{self:item.style}")
@@ -24,7 +31,7 @@
                                     section(:class="item.msg.type",@click="toDetail(item.msg)")
                                         h3 {{item.msg.ext[item.msg.ext.extension+'_title']}}
                                         p {{item.msg.ext[item.msg.ext.extension+'_content']}}
-        //-底部按钮
+        //-底部控制区
         .room_bar
             .form(title="文本框")
                 input.f.news(v-if="true",v-model="inputMessage",@click="focus",@focus="focus")
@@ -37,21 +44,23 @@
                 .send_image(title="发送图片")
                     img(src="../assets/images/iconImage@2x.png",style="height: 18px;")
                     input.uploader(type="file",@change="sendImage",ref="uploader")
-                .custom_message(title="自定义消息",@click="sendCustomMessage('knowledge')") 知识库&nbsp;
-                .custom_message(title="自定义消息",@click="sendCustomMessage('medical_records')") 病例&nbsp;
-            .emoji_item(:class="show",title="表情包")
+                .custom_message(title="自定义消息",@click="openKnowledge") 知识库&nbsp;
+                .custom_message(title="自定义消息",@click="openMdical") 病例&nbsp;
+            //-表情包
+            .emoji_item(:class="{showEmoji:show.emoji}",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
-        //-语音消息：录音弹窗
-        .modal.modal-record(v-if="recordStatus != RecordStatus.HIDE",@click="toggleRecordModal")
-            .modal-body
-                .desc {{RecordDesc[recordStatus]}}
-                .dot(@touchstart="handleRecording",@touchmove="handleRecordingMove",@touchend="handleRecordingCancel")
-                    img.icon-mic(src="../assets/images/mic@2x.png")
-        //-transition(name="slide")
-            router-view(class="child-view")
+            //-知识库列表
+            .emoji_item(:class="{showKnowledge:show.knowledge}",title="知识库列表",@click="openKnowledge")
+                ul
+                    li(v-for="item in knowledgeList",@click="sendCustomMessage('knowledge',item)") {{item.title}}
+            //-病例列表
+            .emoji_item(:class="{showMdical:show['medical_records']}",title="病例列表",@click="openMdical")
+                ul
+                    li(v-for="item in medicalList",@click="sendCustomMessage('medical_records',item)") {{item.name}}
 </template>
 
 <script>
+    import axios from 'axios'
     import {Header, Loadmore, Button} from 'mint-ui'
     import WebIM from 'WebIM'
     import vTxt from '../components/chat/txt.vue'
@@ -59,9 +68,10 @@
     import vImg from '../components/chat/img.vue'
     import vVideo from '../components/chat/video.vue'
     import vAudio from '../components/chat/audio.vue'
+    import uri from '../utils/url'
+    import {extensionTitle} from '../utils/enum'
 
     export default {
-        name: 'Chat',
         components: {
             [Header.name]: Header,
             [Loadmore.name]: Loadmore,
@@ -69,70 +79,117 @@
             vTxt, vEmoji, vImg, vVideo, vAudio
         },
         data: () => ({
+            hxUser: '',
             username: '',
             allLoaded: false,//底部数据全部获取完毕
             Emoji: WebIM.Emoji,
             chatMsg: [],
-            show: 'emoji_list',
-            RecordDesc: {
-                0: '长按开始录音',
-                2: '向上滑动取消',
-                3: '松开手取消',
+            show: {
+                'emoji': false,
+                'knowledge': false,
+                'medical_records': false
             },
-            RecordStatus: {
-                SHOW: 0,
-                HIDE: 1,
-                HOLD: 2,
-                SWIPE: 3,
-                RELEASE: 4
-            },
-            recordStatus: 1,
-            changedTouches: null,
             userMessage: [],
-            inputMessage: []
+            inputMessage: [],
+            medicalList: [],
+            knowledgeList: [],
         }),
         created() {
-            this.username = this.$$vm.currDoc['user_name'] || ''
-            if (!this.$$vm.chatMsg.hasOwnProperty(this.$$vm.currDoc['hxUser'])) this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']] = []
-            this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.$$vm.currDoc['hxUser']])
+            this.hxUser = this.$route.query.hxUser || uri.getQueryString('hxUser')
+//      let msg = JSON.parse(window.localStorage.getItem(this.hxUser)) || []
+//      if (this.$$vm.chatMsg[this.hxUser]) {
+//        this.$$vm.chatMsg[this.hxUser].forEach(item => {
+//          msg.push(item)
+//        })
+//      }
+//            this.$$vm.$set(this.$$vm.chatMsg, this.hxUser, msg)
         },
         mounted() {
-            this.init()
+            this.$nextTick(() => {
+                this.username = this.$$vm.doctors[this.hxUser]['user_name'] || ''
+                if (!this.$$vm.chatMsg.hasOwnProperty(this.hxUser)) this.$$vm.chatMsg[this.hxUser] = []
+                this.$set(this, 'chatMsg', this.$$vm.chatMsg[this.hxUser])//历史消息
+                this.$set(this, 'knowledgeList', this.$$vm.knowledgeList)//知识库
+                this.init()
+            })
         },
         watch: {
             chatMsg(val, oldVal) {
-                this.$nextTick(() => {
-                    this.$refs.main.scrollTop = this.$refs.list.scrollHeight
-                })
+                this.chatListScrollBottom()
             }
         },
         computed: {
             chatListGetter() {
                 return this.chatMsg.map(item => {
+                    item.avatar = this.$$vm.doctors[this.hxUser]['avatar']
+                    item.username = this.$$vm.doctors[this.hxUser]['user_name']
+
                     if (item.style === 'self') {
                         item.avatar = this.$$vm.user.photo
                         item.username = this.$$vm.user.name
-                    } else {
-                        item.avatar = this.$$vm.currDoc.avatar
-                        item.username = this.$$vm.currDoc['user_name']
                     }
+
                     if (!item.avatar) {
                         item.avatar = require('../assets/images/number.png')
                     }
+
                     return item
                 })
+            },
+            bottomGetter() {
+                if (this.show['emoji']
+                    || this.show['knowledge']
+                    || this.show['medical_records']) {
+                    this.chatListScrollBottom()
+                    return '216px'
+                }
             }
         },
         methods: {
             init() {
                 this.$refs.main.scrollTop = this.$refs.list.scrollHeight
-                this.$$vm.$watch(`chatMsg.${this.$$vm.currDoc['hxUser']}`, (val, oldVal) => {
+                this.$$vm.$emit('readed', this.hxUser)
+                this.$$vm.$watch(`chatMsg.${this.hxUser}`, (val, oldVal) => {
                     console.log('[Leo]chatMsg change=>', val)
                     this.$set(this, 'chatMsg', val)
-                    this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
-                    //document.querySelectorAll('.page-current main')[0].scrollTop=document.querySelectorAll('.page-current .list')[0].scrollHeight
+                    this.$$vm.$emit('readed', this.hxUser)
+//          window.localStorage.setItem(this.hxUser, JSON.stringify(this.$$vm.chatMsg[this.hxUser]))
                 })
-                this.$$vm.$emit('readed', this.$$vm.currDoc['hxUser'])
+                this.getPatientBliFirstList()
+            },
+            /**
+             * 获取患者自己的 原始病例列表
+             * API：https://www.eolinker.com/#/home/project/inside/api/detail?groupID=35736&childGroupID=35739&apiID=160199&projectName=%E9%AB%98%E8%A1%80%E5%8E%8B&projectHashKey=6l5ybZRfffbfadb9e3c9dfe17b3171e968e4e19c3fbbcd2
+             */
+            getPatientBliFirstList() {
+                axios.get(`${this.$$vm.host}/api/blianddoc/gaoBlianddoc/patientBliFirstList`, {
+                    params: {
+                        'user_id': this.$$vm.user.id,
+                        pageNo: 1,
+                        pageSize: 100
+                    }
+                }).then(res => {
+                    let data = res.data
+                    if (~~data.returnCode !== 0) {
+                        console.log(data.messageInfo || '获取原始病历列表失败')
+                        Toast(data.messageInfo || '获取原始病历列表失败')
+                        return
+                    }
+                    console.log('原始病历 =>', data.data.list)
+                    this.medicalList = data.data.list
+                })
+            },
+            toDetail(msg) {
+                switch (msg.ext.extension) {
+                    case 'knowledge':
+                        window.open(`${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`)
+                        window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext.extension + '_id']}`
+                        break
+                    case 'medical_records':
+                        window.open(`${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`)
+                        window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext.extension + '_id']}`
+                        break
+                }
             },
             sendMessage() {
                 if (!this.inputMessage.trim()) {
@@ -145,40 +202,57 @@
                 this.cancelEmoji()
             },
             sendCustomMessage(extension, item) {
-                //TODO:获取知识库列表
-                //TODO:知识库详情
-                let msg = '', ext = {extension}
+                let ext = {extension}
+                let msg = extensionTitle[extension]
+
+                ext[`${extension}_id`] = item.id
+                let title = '', content = '';
                 switch (extension) {
                     case 'knowledge':
-                        msg = '[知识库消息]'
+                        title = item.title
+                        content = item.introduce
                         break
                     case 'medical_records':
-                        msg = '[病例]'
+                        title = item.name
                         break
                 }
-
-                ext[`${extension}_id`] = '24ea05b93e5b41e795a195047909a4c2'
-                ext[`${extension}_title`] = '服用降压药的必备常识'
-                ext[`${extension}_content`] = '如何服用降压药，这些常识了解吗？'
+                ext[`${extension}_title`] = title
+                ext[`${extension}_content`] = content
 
                 this.$sendCustomMessage(msg, ext)
             },
-            toDetail(msg) {
-                if (msg.ext.extension === 'knowledge')
-                    window.location.href = `${this.$$vm.host}/xxy/knowledge-detail.html?knowledge_id=${msg.ext[msg.ext + '_id']}`
-                if (msg.ext.extension === 'knowledge')
-                    window.location.href = `${this.$$vm.host}/xxy/details.html?bingliId=${msg.ext[msg.ext + '_id']}`
-            },
             focus() {
-                this.cancelEmoji()
+                this.show['emoji'] = false
+                this.show['knowledge'] = false
+                this.show['medical_records'] = false
             },
-            //region Emoji
+
             openEmoji() {
-                this.show = 'showEmoji'
+                this.show['emoji'] = true
+                this.show['knowledge'] = false
+                this.show['medical_records'] = false
+            },
+            openKnowledge() {
+                this.show['emoji'] = false
+                this.show['knowledge'] = true
+                this.show['medical_records'] = false
+            },
+            openMdical() {
+                this.show['emoji'] = false
+                this.show['knowledge'] = false
+                this.show['medical_records'] = true
             },
             cancelEmoji() {
-                this.show = 'emoji_list'
+                this.show['emoji'] = false
             },
+            cancelKnowledge() {
+                this.show['knowledge'] = false
+            },
+            cancelMdical() {
+                this.show['medical_records'] = false
+            },
+
+            //region Emoji
             sendEmoji(event) {
                 var that = this
                 var emoji = event.target.dataset.emoji
@@ -223,7 +297,7 @@
                     let option = {
                         apiUrl: WebIM.config.apiURL,
                         file: file,
-                        to: that.$$vm.currDoc.hxUser,// 接收消息对象
+                        to: this.hxUser,// 接收消息对象
                         roomType: false,
                         chatType: 'singleChat',
                         onFileUploadError: function (error) {
@@ -238,10 +312,10 @@
                             var msgData = {
                                 info: {
                                     from: that.$$vm.user.hxUser,
-                                    to: that.$$vm.currDoc.hxUser,
+                                    to: that.hxUser,
                                 },
                                 username: that.$$vm.user.hxUser,
-                                yourname: that.$$vm.currDoc.hxUser,
+                                yourname: that.hxUser,
                                 msg: {
                                     type: 'img',
                                     data: url
@@ -250,7 +324,7 @@
                                 time: time,
                                 mid: 'img' + id,
                             }
-                            that.$$vm.chatMsg[that.$$vm.currDoc['hxUser']].push(msgData)
+                            that.$$vm.chatMsg[that.hxUser].push(msgData)
                         },
                         success: function () {// 消息发送成功
                             console.log('[Leo]图片发送成功');
@@ -260,46 +334,6 @@
                     msg.set(option);
                     this.$$im.send(msg.body);
                 }
-            },
-            //endregion
-            //region 语音消息
-            toggleRecordModal() {
-                this.recordStatus = this.recordStatus == this.RecordStatus.HIDE ? this.RecordStatus.SHOW : this.RecordStatus.HIDE
-            },
-            handleRecordingMove(e) {
-                if (!this.changedTouches) {
-                    return
-                }
-                let touch = e.touches[0]
-                if (this.recordStatus == this.RecordStatus.SWIPE) {
-                    if (this.changedTouches.pageY - touch.pageY < 20) {
-                        this.recordStatus = this.RecordStatus.HOLD
-                    }
-                }
-                if (this.recordStatus == this.RecordStatus.HOLD) {
-                    if (this.changedTouches.pageY - touch.pageY > 20) {
-                        this.recordStatus = this.RecordStatus.SWIPE
-                    }
-                }
-            },
-            handleRecording(e) {
-                var self = this
-                this.changedTouches = e.touches[0]
-                this.recordStatus = this.RecordStatus.HOLD
-                //TODO:录音
-                setTimeout(() => {
-                    //超时
-                    this.handleRecordingCancel()
-                }, 100000)
-            },
-            handleRecordingCancel(e) {
-                // 向上滑动状态停止：取消录音发放
-                if (this.recordStatus == this.RecordStatus.SWIPE) {
-                    this.recordStatus = this.RecordStatus.RELEASE
-                } else {
-                    this.recordStatus = this.RecordStatus.HIDE
-                }
-                //wx.stopRecord()
             },
             //endregion
             //region 列表顶部的下拉刷新
@@ -315,9 +349,15 @@
                 this.$refs.loadmore.onBottomLoaded();
             },
             //endregion
+            chatListScrollBottom() {
+                this.$nextTick(() => {
+                    this.$refs.main.scrollTop = this.$refs.list.scrollHeight
+                })
+            },
         }
     }
 </script>
+
 
 <style scoped lang="scss" rel="stylesheet/scss">
     $footerH: 75px;
@@ -520,16 +560,6 @@
         display: none;
     }
 
-    .showEmoji {
-        margin-top: 30px;
-        width: 100%;
-        height: 145px;
-        background-color: #dddddd;
-        padding-top: 10px;
-        padding-left: 3%;
-        display: block;
-    }
-
     .emoji_list img, .showEmoji img {
         width: 26px;
         height: 26px;
@@ -543,11 +573,30 @@
     }
 
     .emoji_item {
-        display: flex;
-        justify-content: space-around;
-        flex-flow: wrap;
+        /*display: flex;*/
+        /*justify-content: space-around;*/
+        /*flex-flow: wrap;*/
         margin-right: 20px;
         overflow: auto;
+        height: 0;
+    }
+
+    .showEmoji, .showKnowledge, .showMdical {
+        /*margin-top: 30px;*/
+        width: 100%;
+        height: 145px;
+        background-color: #dddddd;
+        padding-top: 10px;
+        padding-left: 3%;
+        display: block;
+    }
+
+    .emoji_item {
+        &.showKnowledge {
+            li {
+                padding: 5px 10px;
+            }
+        }
     }
 
     .template {

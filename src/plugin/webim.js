@@ -6,10 +6,9 @@ export default {
         //evenBus
         var vm = new Vue({
             data: {
-                host: 'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
-                appid: 'wx19600a1d8ebcf0fa',//'wxc2af942951daed31',
+                host: 'http://192.168.1.102:8088',//'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
+                appid: 'wx19600a1d8ebcf0fa',//'wxc2af942951daed31',//
                 code: '',
-                lan: {},
                 user: {
                     hxUser: '',
                     id: '',
@@ -17,13 +16,20 @@ export default {
                     pwd: '123456',
                     photo: ''
                 },
-                // friends: [],
                 doctors: {},
-                currDoc: {},
                 chatMsg: {},
+                knowledgeList:[],
                 errorType: -1
+            },
+            created() {
+                //根据本地医生列表获取对应医生的本地消息历史
+                let docs = JSON.parse(window.localStorage.getItem('docs') || '[]')
+                docs.forEach(item => {
+                    this.$set(this.doctors, item.hxUser, JSON.parse(window.localStorage.getItem(item.hxUser) || '[]'))
+                })
             }
         });
+
 
         //建立连接
         var im = new WebIM.connection({
@@ -300,7 +306,7 @@ export default {
 
             message.set({
                 msg: msg,
-                to: vm.currDoc['hxUser'],
+                to: _vm.$route.query['hxUser'],
                 roomType: false,
                 ext,
                 success: function (id, serverMsgId) {
@@ -331,7 +337,7 @@ export default {
                     time: time,
                     mid: message.id
                 }
-                vm.chatMsg[vm.currDoc['hxUser']].push(msgData)
+                vm.chatMsg[_vm.$route.query['hxUser']].push(msgData)
             }
         }
 
@@ -354,7 +360,7 @@ export default {
                     time: time,
                     mid: message.id
                 }
-                vm.chatMsg[vm.currDoc['hxUser']].push(msgData)
+                vm.chatMsg[_vm.$route.query['hxUser']].push(msgData)
             }
         }
 

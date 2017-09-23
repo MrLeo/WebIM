@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta charset="utf-8">
     <meta name="viewport"
           content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
@@ -19,21 +19,20 @@
     <!--<script type='text/javascript' src="./static/js/browser-polyfill.min.js"></script>-->
     <!--webim-->
     <script type='text/javascript' src='./static/js/webim.config.js'></script>
-</head>
-<body>
-<div id="app"></div>
-<!-- built files will be auto injected -->
-<script>
-    console.log('WebIM => ', WebIM)
-    if (WebIM.config.isDebug) {
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+    <script>
+      console.log('WebIM => ', WebIM)
+      if (WebIM.config.isDebug) {
         document.write("<script src='./static/js/strophe-1.2.8.js'><\/script>");
         document.write("<script src='./static/js/websdk-1.4.12.js'><\/script>");
-    } else {
-        <!--A JavaScript library for XMPP over Websocket-->
+      } else {
         document.write("<script src='./static/js/strophe-1.2.8.min.js'><\/script>");
         document.write("<script src='./static/js/websdk-1.4.12.min.js'><\/script>");
-    }
-</script>
-<script type='text/javascript' src='./static/js/websdk.shim.js'></script>
-</body>
+      }
+    </script>
+    <script type='text/javascript' src='./static/js/websdk.shim.js'></script>
+  </body>
 </html>

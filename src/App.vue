@@ -5,6 +5,7 @@
 </template>
 
 <script>
+    import {Header, Loadmore, Button, Toast} from 'mint-ui'
     import axios from 'axios'
     import uri from './utils/url'
     import {extensionTitle} from './utils/enum'
@@ -38,6 +39,9 @@
                         alert('出错了 => ' + e.message)
                     })
 
+                    //获取知识库
+                    this.getKnowledgeList()
+
                     //收到消息
                     this.$$vm.$on('receiveMsg', ({msg, type}) => {
                         console.log('[Leo]收到消息 => ', {msg, type})
@@ -57,8 +61,8 @@
              * @returns {Promise.<void>}
              */
             getUserId() {
-                if (process.env.NODE_ENV === 'development') {
-                    return Promise.resolve('7888bf9cf5cf41de8953538b4546870e')
+                if (process.env.NODE_ENV === 'development') {//测试用户ID
+                    return Promise.resolve('af61458669764025bb7c682d88e8455d')
                 }
                 return axios.get(`${this.$$vm.host}/api/sys/user/getUserId`, {params: {CODE: this.$$vm.code}}).then(res => {
                     if (res.data.returnCode == "03") throw new Error('未获取到用户信息');
@@ -182,16 +186,24 @@
             },
             /**
              * 获取知识库列表
+             * API：https://www.eolinker.com/#/home/project/inside/api/detail?groupID=35834&apiID=161612&projectName=%E9%AB%98%E8%A1%80%E5%8E%8B&projectHashKey=6l5ybZRfffbfadb9e3c9dfe17b3171e968e4e19c3fbbcd2
              */
-            getKnowledgeList(){
-                axios.get(`${this.$$vm.host}/api/gaorepository/gaoRepository/zhishiList`,{
-                    params:{
-                        search:'',
-                        pageNo:1,
-                        pageSize:100
+            getKnowledgeList() {
+                axios.get(`${this.$$vm.host}/api/gaorepository/gaoRepository/zhishiList`, {
+                    params: {
+                        search: '',
+                        pageNo: 1,
+                        pageSize: 100
                     }
-                }).then(res=>{
-                    this.$$vm.knowledgeList = res.data
+                }).then(res => {
+                    let data = res.data
+                    if (~~data.returnCode !== 0) {
+                        console.log(data.messageInfo || '获取知识库失败')
+                        Toast(data.messageInfo || '获取知识库失败')
+                        return
+                    }
+                    console.log('知识库 =>', data.data.list)
+                    this.$$vm.knowledgeList = data.data.list
                 })
             },
         }

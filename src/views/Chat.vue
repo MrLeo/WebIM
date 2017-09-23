@@ -12,7 +12,7 @@
                 mt-button(icon="back") 返回
 
         //-消息列表
-        main(ref="main")
+        main(ref="main",:style="{bottom:bottomGetter}")
             mt-loadmore(:top-method="loadTop", :bottom-method="loadBottom", :bottom-all-loaded="allLoaded", ref="loadmore")
                 .list(ref="list")
                     .message(v-for="item in chatListGetter",:class="{self:item.style}")
@@ -50,11 +50,11 @@
             .emoji_item(:class="{showEmoji:show.emoji}",title="表情包")
                 img(v-for="(item,index) in Emoji.map",:src="Emoji.path+item",:key="index",:data-emoji="index",@click="sendEmoji")
             //-知识库列表
-            .emoji_item(:class="{showKnowledge:show.knowledge}",title="知识库列表")
+            .emoji_item(:class="{showKnowledge:show.knowledge}",title="知识库列表",@click="openKnowledge")
                 ul
                     li(v-for="item in knowledgeList",@click="sendCustomMessage('knowledge',item)") {{item.title}}
             //-病例列表
-            .emoji_item(:class="{showMdical:show['medical_records']}",title="病例列表")
+            .emoji_item(:class="{showMdical:show['medical_records']}",title="病例列表",@click="openMdical")
                 ul
                     li(v-for="item in medicalList",@click="sendCustomMessage('medical_records',item)") {{item.name}}
 </template>
@@ -102,7 +102,7 @@
 //          msg.push(item)
 //        })
 //      }
-            this.$$vm.$set(this.$$vm.chatMsg, this.hxUser, msg)
+//            this.$$vm.$set(this.$$vm.chatMsg, this.hxUser, msg)
         },
         mounted() {
             this.$nextTick(() => {
@@ -115,9 +115,7 @@
         },
         watch: {
             chatMsg(val, oldVal) {
-                this.$nextTick(() => {
-                    this.$refs.main.scrollTop = this.$refs.list.scrollHeight
-                })
+                this.chatListScrollBottom()
             }
         },
         computed: {
@@ -137,6 +135,14 @@
 
                     return item
                 })
+            },
+            bottomGetter() {
+                if (this.show['emoji']
+                    || this.show['knowledge']
+                    || this.show['medical_records']) {
+                    this.chatListScrollBottom()
+                    return '216px'
+                }
             }
         },
         methods: {
@@ -149,14 +155,28 @@
                     this.$$vm.$emit('readed', this.hxUser)
 //          window.localStorage.setItem(this.hxUser, JSON.stringify(this.$$vm.chatMsg[this.hxUser]))
                 })
+                this.getPatientBliFirstList()
             },
-            getPatientBliFirstList(){
-                axios.get(`${this.$$vm.host}/api/blianddoc/gaoBlianddoc/patientBliFirstList`, {params: {
-                    'user_id': userId,
-                    pageNo:1,
-                    pageSize:100
-                }}).then(res=>{
-                    this.medicalList = res.data.list
+            /**
+             * 获取患者自己的 原始病例列表
+             * API：https://www.eolinker.com/#/home/project/inside/api/detail?groupID=35736&childGroupID=35739&apiID=160199&projectName=%E9%AB%98%E8%A1%80%E5%8E%8B&projectHashKey=6l5ybZRfffbfadb9e3c9dfe17b3171e968e4e19c3fbbcd2
+             */
+            getPatientBliFirstList() {
+                axios.get(`${this.$$vm.host}/api/blianddoc/gaoBlianddoc/patientBliFirstList`, {
+                    params: {
+                        'user_id': this.$$vm.user.id,
+                        pageNo: 1,
+                        pageSize: 100
+                    }
+                }).then(res => {
+                    let data = res.data
+                    if (~~data.returnCode !== 0) {
+                        console.log(data.messageInfo || '获取原始病历列表失败')
+                        Toast(data.messageInfo || '获取原始病历列表失败')
+                        return
+                    }
+                    console.log('原始病历 =>', data.data.list)
+                    this.medicalList = data.data.list
                 })
             },
             toDetail(msg) {
@@ -180,10 +200,18 @@
                 let msg = extensionTitle[extension]
 
                 ext[`${extension}_id`] = item.id
-                if(extension === 'knowledge'){
-                    ext[`${extension}_title`] = item.title
-                    ext[`${extension}_content`] = item.introduce
+                let title = '', content = '';
+                switch (extension) {
+                    case 'knowledge':
+                        title = item.title
+                        content = item.introduce
+                        break
+                    case 'medical_records':
+                        title = item.name
+                        break
                 }
+                ext[`${extension}_title`] = title
+                ext[`${extension}_content`] = content
 
                 this.$sendCustomMessage(msg, ext)
             },
@@ -315,6 +343,11 @@
                 this.$refs.loadmore.onBottomLoaded();
             },
             //endregion
+            chatListScrollBottom() {
+                this.$nextTick(() => {
+                    this.$refs.main.scrollTop = this.$refs.list.scrollHeight
+                })
+            },
         }
     }
 </script>
@@ -521,16 +554,6 @@
         display: none;
     }
 
-    .showEmoji, .showKnowledge, .showMdical {
-        margin-top: 30px;
-        width: 100%;
-        height: 145px;
-        background-color: #dddddd;
-        padding-top: 10px;
-        padding-left: 3%;
-        display: block;
-    }
-
     .emoji_list img, .showEmoji img {
         width: 26px;
         height: 26px;
@@ -549,6 +572,25 @@
         /*flex-flow: wrap;*/
         margin-right: 20px;
         overflow: auto;
+        height: 0;
+    }
+
+    .showEmoji, .showKnowledge, .showMdical {
+        /*margin-top: 30px;*/
+        width: 100%;
+        height: 145px;
+        background-color: #dddddd;
+        padding-top: 10px;
+        padding-left: 3%;
+        display: block;
+    }
+
+    .emoji_item {
+        &.showKnowledge {
+            li {
+                padding: 5px 10px;
+            }
+        }
     }
 
     .template {

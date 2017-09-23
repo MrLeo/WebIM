@@ -6,7 +6,7 @@ export default {
         //evenBus
         var vm = new Vue({
             data: {
-                host: 'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
+                host: 'http://192.168.1.102:8088',//'http://www.360unicom.cn/gxy',//'http://xhh.tunnel.qydev.com',//
                 appid: 'wx19600a1d8ebcf0fa',//'wxc2af942951daed31',//
                 code: '',
                 user: {
